@@ -1,6 +1,6 @@
 # Datacenter EDA — agent guide
 
-KiCad-style browser app for designing datacenter networks: **schematic** (logical topology) → **F8 Update Layout** → **layout** (racks, ratsnest, cable routing) → **3D viewer** → exports. The master design spec is `Datacenter Topology Builder — Design Spec.md` (provided alongside the repo); it is the source of truth for behaviour. `docs/HANDOFF.md` is the current state, decision log and remaining work packages — read it before starting anything.
+KiCad-style browser app for designing datacenter networks: **schematic** (logical topology) → **F8 Update Layout** → **layout** (racks, ratsnest, cable routing) → **3D viewer** → exports. The master design spec is `Datacenter Topology Builder — Design Spec.md` (provided alongside the repo); it is the source of truth for behaviour. `docs/HANDOFF.md` is the current state, decision log and remaining work packages — read it before starting anything. Feature specs that extend the master spec live in `docs/specs/` (currently: `fiber-plant-patch-panels.md` — patch panels, trunks, cassettes, tracing, generator).
 
 ## Commands
 

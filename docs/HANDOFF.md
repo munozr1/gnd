@@ -232,6 +232,9 @@ Target from the spec: 60 fps pan/zoom in layout and 3D with `Large site` (50 rac
 - Vitest `test.projects` migration (26); an ErrorBoundary around each editor in `App.tsx`.
 - Spec open questions (§8) once the user answers.
 
+### Feature specs (separate documents under `docs/specs/`)
+- **Fiber plant — patch panels, trunks, cassettes, tracing, generator:** `docs/specs/fiber-plant-patch-panels.md` (branch `feature/fiber-plant-patch-panels`). Work packages F1–F7 are defined inside it; it is additive to everything above.
+
 ---
 
 ## 6. Verification
