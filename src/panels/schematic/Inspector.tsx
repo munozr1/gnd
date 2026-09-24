@@ -41,7 +41,7 @@ export function SchematicInspector() {
       <Section title="Port optics" actions={<Button variant="ghost" onClick={() => setAllPorts(!allPorts)}>{allPorts ? 'Used ports' : 'All ports'}</Button>}>
         {!ports.length && <p className="text-xs text-fg-muted">No connected ports. Choose All ports to assign optics before wiring.</p>}
         {ports.map((p) => <div key={p.portId} className="flex flex-col gap-1 border-b border-border py-1">
-          <span className="text-xs">{p.portId} <span className="text-fg-muted">{p.type}{used.has(p.portId) ? ' · connected' : ''}</span></span>
+          <span className="text-xs">{p.portId} <span className="text-fg-muted">{p.type} · {p.speedsGbps.join('/')} Gbps{used.has(p.portId) ? ' · connected' : ''}</span></span>
           <Select aria-label={`Optic on ${p.portId}`} value={toSelect(c.optics[p.portId])} onValueChange={(v) => execute(commands.setOptic(c.id, p.portId, fromSelect(v)))} options={[{ value: NONE, label: 'No optic' }, ...compatibleOptics(idx.catalog.catalog, p.type).map((o) => ({ value: o.id, label: o.name }))]} />
         </div>)}
       </Section>

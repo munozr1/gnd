@@ -36,7 +36,7 @@ Contract files — change only additively and update `createProject()` + `src/io
 - Units: schematic = abstract units on a 10-unit grid (pin pitch 10); floor plan = **mm**, rack `pos` is the top-left of its footprint at rotation 0, front face points **+y**; rack elevation = mm with the floor at y = 0 and y **down**; 3D = metres (mm/1000), **y up**. 1U = 44.45 mm.
 - Tests live next to code (`*.test.ts[x]`); `src/store` and `src/io` run in jsdom with fake-indexeddb, everything else in node. Build fixtures with `createProject()` / `createComponent()` / `builtinCatalog`, or `buildPodProject()` from `@/model/demo`.
 - `window.__dcStore` is the live store (dev + e2e hook).
-- Shared repository: `https://github.com/munozr1/gnd`. The local folder tracks this Git history; use a feature branch and pull request for collaborative changes.
+- Shared repository: `https://github.com/munozr1/gnd`. The user explicitly prefers working on `main` and pushing directly when publishing is requested; do not create a feature branch or pull request unless asked.
 
 ## Working in parallel
 

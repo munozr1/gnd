@@ -6,7 +6,7 @@ _Last updated 2026-09-24. Companion to the master spec (`Datacenter Topology Bui
 
 ## 0. TL;DR
 
-- **Green:** `npm run check` passes (tsc strict, 62 Vitest files / 645 tests, production build). The app boots, autosaves to IndexedDB, restores on reload, and `File ▸ New from template ▸ Demo pod` loads a 2-spine × 8-leaf pod with 42 devices, 80 links, 6 racks and 20 routed cables. ERC on it: 8 info, 0 errors. DRC: 60 "unrouted" warnings, 0 errors.
+- **Green:** `npm run check` passes (tsc strict, 63 Vitest files / 665 tests, production build); all 12 browser tests pass. The app boots, autosaves to IndexedDB, restores on reload, and `File ▸ New from template ▸ Demo pod` loads a 2-spine × 8-leaf pod with 42 devices, 80 links, 6 racks and 20 routed cables. ERC on it: 8 info, 0 errors. DRC: 60 "unrouted" warnings, 0 errors. Cutsheet CSV import is delivered in §11.
 - **Complete:** data model, catalog, pure logic for every spec table (schematic tools, F8 sync + back-annotation, 9 ERC rules, 15 DRC rules, routing/pathway math, cable lengths), Zustand command store with per-editor undo/redo, persistence + migrations, app shell, panel registry, the entire command (verb) layer, demo/perf project generators, layout-side panels (F8 dialog, place-by-rule, inspectors, proposals, library), the schematic Library panel + custom device form, and all exports.
 - **Now usable:** schematic canvas/inspector/sheets, physical floor plan, rack elevations, Unplaced bin, and 3D viewer. Nine Playwright tests cover schematic editing plus Pod A rack/device movement, collision rejection, undo, 3D rendering, visibility, PNG capture and rack cross-probing. See §9–10 for delivered scope and remaining refinements.
 - **Not built yet:** model-assignment table, fabric connector dialog, breakout dialog, and link-list panel. Advanced physical-editor requirements and Large site performance remain; the physical views are no longer placeholders.
@@ -245,7 +245,7 @@ npm run test:e2e              # playwright; starts vite on :5199 itself
 
 Manual smoke that already works: File ▸ New from template ▸ Demo pod → status bar `Unrouted: 60 / 80`, ERC 8 info, DRC 60 warnings; Layout tab shows Library / Inspector / Proposals and the F8 dialog; reload restores the project; File ▸ Export ▸ any list export downloads a CSV.
 
-The workspace is connected to `https://github.com/munozr1/gnd`, preserving the existing shared history. The editor implementation is on `codex/pod-a-editors` for pull-request review. Build caches are ignored and are no longer tracked.
+The workspace is connected to `https://github.com/munozr1/gnd`, preserving the existing shared history. The editor implementation was pushed to `main` at `0895ab4`. The user explicitly prefers working on and publishing directly to `main`; do not create branches or pull requests unless asked. Build caches are ignored and are no longer tracked.
 
 ---
 
@@ -321,3 +321,20 @@ The workspace is connected to `https://github.com/munozr1/gnd`, preserving the e
 - WP-D: precise accessory/fiber-enclosure visuals, cable picking/bundle fans, external airwire stubs, and automated native drag-from-bin coverage. Current view draws individual dressing paths.
 - WP-E: detailed faceplate textures/vendor GLTF, waterfall geometry, bundle packing/velcro/merged geometry, walk mode, underfloor tile controls, and distance-based LOD. PNG currently captures the WebGL scene; HTML rack-name labels and toolbar overlays are excluded.
 - Large site performance is not measured or certified. The nine browser tests verify the delivered core, not every design-spec acceptance criterion. Vitest still reports the existing environmentMatchGlobs deprecation and now a non-failing multiple-Three-instances warning in the jsdom app test.
+
+## 11. Cutsheet CSV import — 2026-09-24 continuation
+
+**Delivered**
+- File → Import cutsheet CSV opens a preview with automatic header mapping, editable endpoint/speed/state/type columns, project name, validation and optional draft rack placement. JSON restore remains separate. See `docs/cutsheet-import.md` for the user workflow and assumptions.
+- `src/io/imports/cutsheet.ts`: quoted CSV parsing, last-underscore endpoint parsing, speed normalization, duplicate detection and occupied-port conflict validation. Preserves exact device/port names and all connection states. Pure project construction creates custom provisional hardware, hierarchical schematic sheets and synchronized placements without changing the schema.
+- `src/panels/imports/CutsheetImportDialog.tsx`: saves the previous and new projects before switching, resets stale editor tools/elevation state, fits the schematic and makes the import survive reload. Cancel leaves the open project unchanged.
+- The provided `docs/test cutsheet.csv` imports 49 devices and 48 links (46 × 10 Gbps, 2 × 100 Gbps). Draft placement creates five racks; disabling it creates 49 unplaced devices. The root contains the distribution hub and four child sheets with 12 neighbors each.
+- Exact optics, cable media and routes are intentionally unassigned because the file only supplies endpoint names and speeds. Generic 1U hardware, port form factors and rack/U assignments are explicitly provisional. Breakout suffixes remain literal port names; parent cages are not inferred. Reimport creates a new project, not an update to an existing one.
+
+**Verification**
+- `npm run check`: strict TypeScript, 63 files / 665 unit tests, production build.
+- All 12 browser tests pass. `e2e/cutsheet.spec.ts` covers a representative synthetic cutsheet, mapping/preview, persistence of both projects, draft Layout/3D counts, stale elevation reset, conflict blocking, cancellation and alternate-column logical-only import.
+- Parser/builder tests verify source names and endpoint pairs, speeds, CSV edge cases, duplicates/conflicts, generated ID uniqueness, sync, rack fit and JSON round trip.
+- Visually inspected the preview, generated schematic child sheet and 3D racks/airwires. Browser screenshots are regenerated in `test-results/cutsheet-*.png`.
+
+- Before publishing, the original site CSV was no longer present in the workspace. Automated tests now use `e2e/fixtures/cutsheet.csv`, a synthetic 49-device / 48-link fixture with the same column layout, speed/state distribution and breakout-port coverage. The original site file is not included in the repository.

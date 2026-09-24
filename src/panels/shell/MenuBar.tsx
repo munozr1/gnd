@@ -25,6 +25,7 @@ import { importProjectFile, newProject, newProjectFromTemplate, saveProjectFile 
 import { PROJECT_PICKER_DIALOG } from './ProjectPicker';
 import { ProjectTitle } from './ProjectTitle';
 import { SHELL_KEYS } from './shellShortcuts';
+import { CUTSHEET_IMPORT_DIALOG } from '@/panels/imports/CutsheetImportDialog';
 import { SHORTCUTS_DIALOG } from './ShortcutsDialog';
 import { runChecks } from './useChecks';
 
@@ -97,6 +98,7 @@ function FileMenu() {
         Save (download JSON)
       </DropdownMenuItem>
       <DropdownMenuItem onSelect={() => void importProjectFile()}>Import JSON…</DropdownMenuItem>
+      <DropdownMenuItem onSelect={() => s().openDialog(CUTSHEET_IMPORT_DIALOG)}>Import cutsheet CSV…</DropdownMenuItem>
       <DropdownMenuSub>
         <DropdownMenuSubTrigger>Export</DropdownMenuSubTrigger>
         <DropdownMenuSubContent>
