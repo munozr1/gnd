@@ -1,5 +1,5 @@
 /** Top menu bar: File / Edit / View / Help plus the editable project title. */
-import type { ReactNode } from 'react';
+import { Fragment, type ReactNode } from 'react';
 import type { EditorId, RoutingLayer } from '@/model/types';
 import { store, useActiveTab, useCanRedo, useCanUndo, useRedoLabel, useStore, useUndoLabel, type LayoutView, type RatsnestMode, type Viewer3dUi } from '@/store';
 import { formatKeys } from '@/store/shortcuts';
@@ -19,8 +19,9 @@ import {
   DropdownMenuTrigger,
 } from '@/ui/DropdownMenu';
 import { toast } from '@/ui/Toast';
-import { EXPORT_KINDS, runExport } from './exports';
-import { importProjectFile, newProject, saveProjectFile } from './projectActions';
+import { exportKindsByGroup, runExport } from './exports';
+import { demoTemplates } from '@/model/demo';
+import { importProjectFile, newProject, newProjectFromTemplate, saveProjectFile } from './projectActions';
 import { PROJECT_PICKER_DIALOG } from './ProjectPicker';
 import { ProjectTitle } from './ProjectTitle';
 import { SHELL_KEYS } from './shellShortcuts';
@@ -78,6 +79,16 @@ function FileMenu() {
   return (
     <MenuButton label="File">
       <DropdownMenuItem onSelect={() => newProject()}>New project</DropdownMenuItem>
+      <DropdownMenuSub>
+        <DropdownMenuSubTrigger>New from template</DropdownMenuSubTrigger>
+        <DropdownMenuSubContent>
+          {demoTemplates.map((t) => (
+            <DropdownMenuItem key={t.id} onSelect={() => newProjectFromTemplate(t)} title={t.description}>
+              {t.name}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuSubContent>
+      </DropdownMenuSub>
       <DropdownMenuItem onSelect={() => s().openDialog(PROJECT_PICKER_DIALOG)} shortcut={formatKeys(SHELL_KEYS.open)}>
         Open…
       </DropdownMenuItem>
@@ -89,10 +100,15 @@ function FileMenu() {
       <DropdownMenuSub>
         <DropdownMenuSubTrigger>Export</DropdownMenuSubTrigger>
         <DropdownMenuSubContent>
-          {EXPORT_KINDS.map((k) => (
-            <DropdownMenuItem key={k.id} onSelect={() => void runExport(k)}>
-              {k.label}
-            </DropdownMenuItem>
+          {exportKindsByGroup().map((g, gi) => (
+            <Fragment key={g.group}>
+              {gi > 0 && <DropdownMenuSeparator />}
+              {g.kinds.map((k) => (
+                <DropdownMenuItem key={k.id} onSelect={() => void runExport(k)} title={k.description}>
+                  {k.name}
+                </DropdownMenuItem>
+              ))}
+            </Fragment>
           ))}
         </DropdownMenuSubContent>
       </DropdownMenuSub>

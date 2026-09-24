@@ -13,6 +13,7 @@ import { Tabs, TabsContent } from '@/ui/Tabs';
 import { ToastViewport } from '@/ui/Toast';
 import { TooltipProvider } from '@/ui/Tooltip';
 import '@/panels/layout'; // registers the layout panels, dialogs and toolbar
+import '@/panels/library'; // registers the schematic library panel + 'library' / custom-device dialogs
 import { EditorFrame, RegisteredDialogs } from '@/panels/shell/Docks';
 import { EditorTabs } from '@/panels/shell/EditorTabs';
 import { IssuesDrawer } from '@/panels/shell/IssuesDrawer';

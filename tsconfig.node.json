@@ -12,7 +12,10 @@
     "allowSyntheticDefaultImports": true,
     "types": [
       "node"
-    ]
+    ],
+    "outDir": ".tsbuild/node",
+    "declaration": true,
+    "emitDeclarationOnly": true
   },
   "include": [
     "vite.config.ts",

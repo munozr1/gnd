@@ -4,6 +4,7 @@
  * (shortcuts) can call them too.
  */
 import { deleteProject, downloadJson, loadProject, projectFileName, readJsonFile, setLastOpened, type AutosaveHandle } from '@/io/persistence';
+import type { DemoTemplate } from '@/model/demo';
 import { createProject } from '@/model/factories';
 import type { Id } from '@/model/types';
 import { store } from '@/store';
@@ -28,6 +29,18 @@ export function newProject(name = 'Untitled datacenter'): void {
   store.getState().replaceProject(project);
   store.getState().setActiveTab('schematic');
   toast.ok(`Created "${name}"`);
+}
+
+/** Replace the open project with a generated template (File ▸ New from template). */
+export function newProjectFromTemplate(template: DemoTemplate): void {
+  try {
+    const project = template.build();
+    store.getState().replaceProject(project);
+    store.getState().setActiveTab('schematic');
+    toast.ok(`Created "${project.name}" from ${template.name}`);
+  } catch (err) {
+    toast.error(`Could not build template: ${errorMessage(err)}`);
+  }
 }
 
 /** Open a saved project by id. Returns false (with a toast) when it is missing or fails to load. */
