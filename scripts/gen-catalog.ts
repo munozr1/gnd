@@ -304,10 +304,10 @@ const racks: RackDef[] = [
   { id: 'rack.standard-42u', name: 'Standard rack 42U', heightU: 42, widthMm: 600, depthMm: 1070 },
   { id: 'rack.tall-48u', name: 'Tall rack 48U', heightU: 48, widthMm: 600, depthMm: 1070 },
   { id: 'rack.network-42u', name: 'Network rack 42U (800 wide)', heightU: 42, widthMm: 800, depthMm: 1070 },
-  // Patch frames: free-standing, shallow open frames for patch panels. A patch
-  // panel dropped on the floor gets its own 12U frame; the 42U one is a patch rack.
-  { id: 'rack.patch-frame-12u', name: 'Patch panel frame 12U', heightU: 12, widthMm: 600, depthMm: 300, kind: 'patch-frame' },
-  { id: 'rack.patch-frame-42u', name: 'Patch rack 42U', heightU: 42, widthMm: 600, depthMm: 300, kind: 'patch-frame' },
+  // Patch frames: free-standing patch-panel walls, a thin 120 mm slab with the
+  // panels on both faces. A panel dropped on the floor gets its own 12U wall.
+  { id: 'rack.patch-frame-12u', name: 'Patch panel wall 12U', heightU: 12, widthMm: 600, depthMm: 120, kind: 'patch-frame' },
+  { id: 'rack.patch-frame-42u', name: 'Patch panel wall 42U', heightU: 42, widthMm: 600, depthMm: 120, kind: 'patch-frame' },
 ];
 
 const trays: TrayDef[] = [

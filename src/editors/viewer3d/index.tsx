@@ -163,7 +163,7 @@ export function Viewer3D() {
           {project.trays.filter((t) => t.layer === 'underfloor' ? ui.showUnderfloor : ui.showOverhead).map((tray) => <TrayMesh key={tray.id} tray={tray} ceiling={project.room.ceilingMm / 1000} />)}
           {cables.map((cable) => <Cable key={cable.id} cable={cable} />)}
           {airwires.map((cable) => <Line key={cable.id} points={cable.points} color={cable.color} transparent opacity={0.25} lineWidth={0.7} dashed dashSize={0.035} gapSize={0.025} onClick={(e) => select({ kind: 'link', id: cable.id }, e)} />)}
-          {data.labels.map((label) => <Html key={label.id} position={label.position} center zIndexRange={[10, 0]}><button className="rounded border border-[#527083] bg-[#142532]/90 px-2 py-0.5 text-[11px] text-[#c4e1ed]" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); store.getState().select({ kind: 'rack', id: label.id }); }}>{label.text}</button></Html>)}
+          {data.labels.map((label) => <Html key={label.id} position={label.position} center zIndexRange={[10, 0]}><button className="whitespace-nowrap rounded border border-[#527083] bg-[#142532]/90 px-2 py-0.5 text-[11px] text-[#c4e1ed]" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); store.getState().select({ kind: 'rack', id: label.id }); }}>{label.text}</button></Html>)}
           <CameraRig project={project} data={data} preset={preset} frameCounter={frameCounter} />
         </Canvas>
       </Suspense></ViewerBoundary>

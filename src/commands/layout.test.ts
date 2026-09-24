@@ -154,7 +154,7 @@ describe('placeInNewFrame', () => {
     const r = exec(f.project, cmd);
     expect(r.changed).toBe(true);
     const rack = r.project.racks.find((x) => x.id === cmd.result)!;
-    expect(rack).toMatchObject({ name: 'PF-PP1', kind: 'patch-frame', heightU: 12, widthMm: 600, depthMm: 300, pos: { x: 7000, y: 2000 }, rotationDeg: 0 });
+    expect(rack).toMatchObject({ name: 'PF-PP1', kind: 'patch-frame', heightU: 12, widthMm: 600, depthMm: 120, pos: { x: 7000, y: 2000 }, rotationDeg: 0 });
     expect(r.project.racks.map((x) => x.name)).toEqual(['R01', 'R02', 'PF-PP1']);
     expect(placementOf(r.project, pp.id)).toEqual({ componentId: pp.id, rackId: rack.id, uPosition: 1, face: 'front' });
     expect(uCollision.check(r.project)).toEqual([]);
@@ -223,7 +223,7 @@ describe('placeInNewFrame', () => {
     f.project.components.push(c);
     const cmd = layout.placeInNewFrame(c.id);
     const r = exec(f.project, cmd);
-    expect(r.project.racks.find((x) => x.id === cmd.result)).toMatchObject({ name: 'PF-BIG1', kind: 'patch-frame', heightU: 42, widthMm: 600, depthMm: 300 });
+    expect(r.project.racks.find((x) => x.id === cmd.result)).toMatchObject({ name: 'PF-BIG1', kind: 'patch-frame', heightU: 42, widthMm: 600, depthMm: 120 });
     expect(placementOf(r.project, c.id)).toEqual({ componentId: c.id, rackId: cmd.result, uPosition: 1, face: 'front' });
     expect(uCollision.check(r.project)).toEqual([]);
     expect(undoCommand(r.project, r.history, 'layout').project.placements.some((p) => p.componentId === c.id)).toBe(false);

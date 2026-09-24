@@ -134,7 +134,7 @@ Registered dialog ids so far: `library`, `custom-device`, `update-layout` (F8), 
 26. Vitest prints a deprecation warning for `environmentMatchGlobs`; migrating to `test.projects` is a small cleanup.
 
 **Patch panels / frames (2026-09-24, branch `feature/fiber-plant-patch-panels`)**
-27. A patch panel is its own rack: `Rack.kind: 'patch-frame'` (free-standing, `rack.patch-frame-12u` / `-42u` in the catalog). `commands.placeInNewFrame(componentId, pos?)` creates the frame (named `PF-<ref>`) and places the device at U1; the floor plan accepts a drop from the Unplaced bin (on empty floor → own frame; on a rack → first free U) and the bin has an "Own frame" button. Frames never require a parent rack; `Rack.attachedTo` is an optional docking hook for the fiber-plant generator (see `docs/specs/fiber-plant-patch-panels.md`).
+27. A patch panel is its own rack: `Rack.kind: 'patch-frame'` (free-standing, `rack.patch-frame-12u` / `-42u` in the catalog, 600 × 120 mm — rendered in 3D as a patch-panel *wall*: slab + plinth + cap, faceplates proud on both faces, pigtail stubs in the cable colour on every connected port; no posts, no door). `commands.placeInNewFrame(componentId, pos?)` creates the frame (named `PF-<ref>`) and places the device at U1; the floor plan accepts a drop from the Unplaced bin (on empty floor → own frame; on a rack → first free U) and the bin has an "Own frame" button. Frames never require a parent rack; `Rack.attachedTo` is an optional docking hook for the fiber-plant generator (see `docs/specs/fiber-plant-patch-panels.md`).
 
 ---
 

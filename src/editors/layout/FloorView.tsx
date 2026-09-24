@@ -152,8 +152,9 @@ export function FloorView() {
           if (isPatchFrame(r)) {
             ctx.fillStyle = selected ? FRAME.fillSelected : FRAME.fill; ctx.fillRect(b.x, b.y, b.width, b.height);
             ctx.setLineDash([8 / zoom, 5 / zoom]); ctx.strokeStyle = selected ? FRAME.strokeSelected : FRAME.stroke; ctx.lineWidth = (selected ? 2 : 1) / zoom; ctx.strokeRect(b.x, b.y, b.width, b.height); ctx.setLineDash([]);
-            caption(ctx, r.name, { x: center.x, y: center.y - b.height * 0.22 }, 12 / zoom, FRAME.text);
-            caption(ctx, `patch frame · ${count} panel${count === 1 ? '' : 's'}`, { x: center.x, y: center.y + b.height * 0.3 }, 9 / zoom, FRAME.subtext);
+            // The wall is only 120 mm deep, so both captions sit outside the bar, clear of the front arrow.
+            caption(ctx, r.name, { x: center.x, y: b.y - 120 }, 12 / zoom, FRAME.text);
+            caption(ctx, `patch frame · ${count} panel${count === 1 ? '' : 's'}`, { x: center.x, y: b.y + b.height + 120 }, 9 / zoom, FRAME.subtext);
           } else {
             ctx.fillStyle = selected ? '#204467' : '#25394c'; ctx.fillRect(b.x, b.y, b.width, b.height);
             ctx.strokeStyle = selected ? '#69bfff' : '#6f8aa2'; ctx.lineWidth = (selected ? 2 : 1) / zoom; ctx.strokeRect(b.x, b.y, b.width, b.height);
