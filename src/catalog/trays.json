@@ -1,0 +1,84 @@
+[
+  {
+    "id": "tray.fiber-runway-4",
+    "name": "Fiber runway 4\"",
+    "kind": "fiber-runway",
+    "widthMm": 102,
+    "depthMm": 50,
+    "accepts": [
+      "fiber"
+    ]
+  },
+  {
+    "id": "tray.fiber-runway-6",
+    "name": "Fiber runway 6\"",
+    "kind": "fiber-runway",
+    "widthMm": 152,
+    "depthMm": 50,
+    "accepts": [
+      "fiber"
+    ]
+  },
+  {
+    "id": "tray.fiber-runway-12",
+    "name": "Fiber runway 12\"",
+    "kind": "fiber-runway",
+    "widthMm": 305,
+    "depthMm": 50,
+    "accepts": [
+      "fiber"
+    ]
+  },
+  {
+    "id": "tray.ladder-12",
+    "name": "Ladder rack 12\"",
+    "kind": "ladder",
+    "widthMm": 305,
+    "depthMm": 40,
+    "accepts": [
+      "copper"
+    ]
+  },
+  {
+    "id": "tray.ladder-18",
+    "name": "Ladder rack 18\"",
+    "kind": "ladder",
+    "widthMm": 457,
+    "depthMm": 40,
+    "accepts": [
+      "copper"
+    ]
+  },
+  {
+    "id": "tray.ladder-24",
+    "name": "Ladder rack 24\"",
+    "kind": "ladder",
+    "widthMm": 610,
+    "depthMm": 40,
+    "accepts": [
+      "copper"
+    ]
+  },
+  {
+    "id": "tray.basket-200",
+    "name": "Wire basket 200 mm",
+    "kind": "basket",
+    "widthMm": 200,
+    "depthMm": 60,
+    "accepts": [
+      "copper",
+      "fiber"
+    ]
+  },
+  {
+    "id": "tray.basket-300",
+    "name": "Wire basket 300 mm",
+    "kind": "basket",
+    "widthMm": 300,
+    "depthMm": 60,
+    "accepts": [
+      "copper",
+      "fiber"
+    ]
+  }
+]

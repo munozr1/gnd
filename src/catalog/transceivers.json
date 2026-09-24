@@ -1,0 +1,92 @@
+[
+  {
+    "id": "xcvr.10g-sr",
+    "name": "10G-SR",
+    "formFactor": "SFP+",
+    "speedGbps": 10,
+    "media": "MMF",
+    "connector": "LC",
+    "reachM": 300,
+    "lanes": 1
+  },
+  {
+    "id": "xcvr.10g-lr",
+    "name": "10G-LR",
+    "formFactor": "SFP+",
+    "speedGbps": 10,
+    "media": "SMF",
+    "connector": "LC",
+    "reachM": 10000,
+    "lanes": 1
+  },
+  {
+    "id": "xcvr.25g-sr",
+    "name": "25G-SR",
+    "formFactor": "SFP28",
+    "speedGbps": 25,
+    "media": "MMF",
+    "connector": "LC",
+    "reachM": 100,
+    "lanes": 1
+  },
+  {
+    "id": "xcvr.25g-lr",
+    "name": "25G-LR",
+    "formFactor": "SFP28",
+    "speedGbps": 25,
+    "media": "SMF",
+    "connector": "LC",
+    "reachM": 10000,
+    "lanes": 1
+  },
+  {
+    "id": "xcvr.100g-sr4",
+    "name": "100G-SR4",
+    "formFactor": "QSFP28",
+    "speedGbps": 100,
+    "media": "MMF",
+    "connector": "MPO-12",
+    "reachM": 100,
+    "lanes": 4
+  },
+  {
+    "id": "xcvr.100g-lr4",
+    "name": "100G-LR4",
+    "formFactor": "QSFP28",
+    "speedGbps": 100,
+    "media": "SMF",
+    "connector": "LC",
+    "reachM": 10000,
+    "lanes": 4
+  },
+  {
+    "id": "xcvr.400g-dr4",
+    "name": "400G-DR4",
+    "formFactor": "QSFP-DD",
+    "speedGbps": 400,
+    "media": "SMF",
+    "connector": "MPO-12",
+    "reachM": 500,
+    "lanes": 4
+  },
+  {
+    "id": "xcvr.400g-sr8",
+    "name": "400G-SR8",
+    "formFactor": "QSFP-DD",
+    "speedGbps": 400,
+    "media": "MMF",
+    "connector": "MPO-16",
+    "reachM": 100,
+    "lanes": 8
+  },
+  {
+    "id": "xcvr.1g-t",
+    "name": "1G-T",
+    "formFactor": "SFP",
+    "speedGbps": 1,
+    "media": "Copper",
+    "connector": "RJ45",
+    "reachM": 100,
+    "lanes": 1
+  }
+]

@@ -1,0 +1,49 @@
+[
+  {
+    "id": "acc.vcm-6",
+    "name": "Vertical cable manager 6\"",
+    "type": "vcm",
+    "widthMm": 152
+  },
+  {
+    "id": "acc.vcm-10",
+    "name": "Vertical cable manager 10\"",
+    "type": "vcm",
+    "widthMm": 254
+  },
+  {
+    "id": "acc.vcm-12",
+    "name": "Vertical cable manager 12\"",
+    "type": "vcm",
+    "widthMm": 305
+  },
+  {
+    "id": "acc.hcm-1u",
+    "name": "Horizontal cable manager 1U",
+    "type": "hcm",
+    "heightU": 1
+  },
+  {
+    "id": "acc.hcm-2u",
+    "name": "Horizontal cable manager 2U",
+    "type": "hcm",
+    "heightU": 2
+  },
+  {
+    "id": "acc.fiber-enclosure-1u",
+    "name": "Fiber enclosure 1U",
+    "type": "fiber-enclosure",
+    "heightU": 1
+  },
+  {
+    "id": "acc.fiber-enclosure-2u",
+    "name": "Fiber enclosure 2U",
+    "type": "fiber-enclosure",
+    "heightU": 2
+  },
+  {
+    "id": "acc.top-entry",
+    "name": "Rack top entry (brush)",
+    "type": "top-entry"
+  }
+]

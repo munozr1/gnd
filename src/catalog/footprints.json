@@ -1,0 +1,3461 @@
+[
+  {
+    "id": "fp.leaf-switch-48x25-8x100",
+    "model": "ToR / leaf switch 48×25G + 8×100G",
+    "kind": "switch",
+    "heightU": 1,
+    "depthMm": 500,
+    "widthMm": 482.6,
+    "ports": [
+      {
+        "id": "eth1/1",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 24.610416666666666,
+          "y": 8
+        },
+        "face": "front",
+        "group": "downlinks"
+      },
+      {
+        "id": "eth1/2",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 33.83125,
+          "y": 8
+        },
+        "face": "front",
+        "group": "downlinks"
+      },
+      {
+        "id": "eth1/3",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 43.05208333333333,
+          "y": 8
+        },
+        "face": "front",
+        "group": "downlinks"
+      },
+      {
+        "id": "eth1/4",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 52.27291666666667,
+          "y": 8
+        },
+        "face": "front",
+        "group": "downlinks"
+      },
+      {
+        "id": "eth1/5",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 61.49375,
+          "y": 8
+        },
+        "face": "front",
+        "group": "downlinks"
+      },
+      {
+        "id": "eth1/6",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 70.71458333333332,
+          "y": 8
+        },
+        "face": "front",
+        "group": "downlinks"
+      },
+      {
+        "id": "eth1/7",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 79.93541666666667,
+          "y": 8
+        },
+        "face": "front",
+        "group": "downlinks"
+      },
+      {
+        "id": "eth1/8",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 89.15625,
+          "y": 8
+        },
+        "face": "front",
+        "group": "downlinks"
+      },
+      {
+        "id": "eth1/9",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 98.37708333333333,
+          "y": 8
+        },
+        "face": "front",
+        "group": "downlinks"
+      },
+      {
+        "id": "eth1/10",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 107.59791666666666,
+          "y": 8
+        },
+        "face": "front",
+        "group": "downlinks"
+      },
+      {
+        "id": "eth1/11",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 116.81875,
+          "y": 8
+        },
+        "face": "front",
+        "group": "downlinks"
+      },
+      {
+        "id": "eth1/12",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 126.03958333333333,
+          "y": 8
+        },
+        "face": "front",
+        "group": "downlinks"
+      },
+      {
+        "id": "eth1/13",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 135.26041666666669,
+          "y": 8
+        },
+        "face": "front",
+        "group": "downlinks"
+      },
+      {
+        "id": "eth1/14",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 144.48125000000002,
+          "y": 8
+        },
+        "face": "front",
+        "group": "downlinks"
+      },
+      {
+        "id": "eth1/15",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 153.70208333333335,
+          "y": 8
+        },
+        "face": "front",
+        "group": "downlinks"
+      },
+      {
+        "id": "eth1/16",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 162.92291666666668,
+          "y": 8
+        },
+        "face": "front",
+        "group": "downlinks"
+      },
+      {
+        "id": "eth1/17",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 172.14375,
+          "y": 8
+        },
+        "face": "front",
+        "group": "downlinks"
+      },
+      {
+        "id": "eth1/18",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 181.36458333333334,
+          "y": 8
+        },
+        "face": "front",
+        "group": "downlinks"
+      },
+      {
+        "id": "eth1/19",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 190.58541666666667,
+          "y": 8
+        },
+        "face": "front",
+        "group": "downlinks"
+      },
+      {
+        "id": "eth1/20",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 199.80625,
+          "y": 8
+        },
+        "face": "front",
+        "group": "downlinks"
+      },
+      {
+        "id": "eth1/21",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 209.02708333333334,
+          "y": 8
+        },
+        "face": "front",
+        "group": "downlinks"
+      },
+      {
+        "id": "eth1/22",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 218.24791666666667,
+          "y": 8
+        },
+        "face": "front",
+        "group": "downlinks"
+      },
+      {
+        "id": "eth1/23",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 227.46875,
+          "y": 8
+        },
+        "face": "front",
+        "group": "downlinks"
+      },
+      {
+        "id": "eth1/24",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 236.68958333333333,
+          "y": 8
+        },
+        "face": "front",
+        "group": "downlinks"
+      },
+      {
+        "id": "eth1/25",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 245.9104166666667,
+          "y": 8
+        },
+        "face": "front",
+        "group": "downlinks"
+      },
+      {
+        "id": "eth1/26",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 255.13125000000002,
+          "y": 8
+        },
+        "face": "front",
+        "group": "downlinks"
+      },
+      {
+        "id": "eth1/27",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 264.3520833333333,
+          "y": 8
+        },
+        "face": "front",
+        "group": "downlinks"
+      },
+      {
+        "id": "eth1/28",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 273.57291666666663,
+          "y": 8
+        },
+        "face": "front",
+        "group": "downlinks"
+      },
+      {
+        "id": "eth1/29",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 282.79375,
+          "y": 8
+        },
+        "face": "front",
+        "group": "downlinks"
+      },
+      {
+        "id": "eth1/30",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 292.0145833333333,
+          "y": 8
+        },
+        "face": "front",
+        "group": "downlinks"
+      },
+      {
+        "id": "eth1/31",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 301.23541666666665,
+          "y": 8
+        },
+        "face": "front",
+        "group": "downlinks"
+      },
+      {
+        "id": "eth1/32",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 310.45624999999995,
+          "y": 8
+        },
+        "face": "front",
+        "group": "downlinks"
+      },
+      {
+        "id": "eth1/33",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 319.6770833333333,
+          "y": 8
+        },
+        "face": "front",
+        "group": "downlinks"
+      },
+      {
+        "id": "eth1/34",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 328.8979166666667,
+          "y": 8
+        },
+        "face": "front",
+        "group": "downlinks"
+      },
+      {
+        "id": "eth1/35",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 338.11875,
+          "y": 8
+        },
+        "face": "front",
+        "group": "downlinks"
+      },
+      {
+        "id": "eth1/36",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 347.33958333333334,
+          "y": 8
+        },
+        "face": "front",
+        "group": "downlinks"
+      },
+      {
+        "id": "eth1/37",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 356.56041666666664,
+          "y": 8
+        },
+        "face": "front",
+        "group": "downlinks"
+      },
+      {
+        "id": "eth1/38",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 365.78125,
+          "y": 8
+        },
+        "face": "front",
+        "group": "downlinks"
+      },
+      {
+        "id": "eth1/39",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 375.0020833333333,
+          "y": 8
+        },
+        "face": "front",
+        "group": "downlinks"
+      },
+      {
+        "id": "eth1/40",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 384.22291666666666,
+          "y": 8
+        },
+        "face": "front",
+        "group": "downlinks"
+      },
+      {
+        "id": "eth1/41",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 393.44374999999997,
+          "y": 8
+        },
+        "face": "front",
+        "group": "downlinks"
+      },
+      {
+        "id": "eth1/42",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 402.6645833333333,
+          "y": 8
+        },
+        "face": "front",
+        "group": "downlinks"
+      },
+      {
+        "id": "eth1/43",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 411.88541666666663,
+          "y": 8
+        },
+        "face": "front",
+        "group": "downlinks"
+      },
+      {
+        "id": "eth1/44",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 421.10625,
+          "y": 8
+        },
+        "face": "front",
+        "group": "downlinks"
+      },
+      {
+        "id": "eth1/45",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 430.3270833333333,
+          "y": 8
+        },
+        "face": "front",
+        "group": "downlinks"
+      },
+      {
+        "id": "eth1/46",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 439.54791666666665,
+          "y": 8
+        },
+        "face": "front",
+        "group": "downlinks"
+      },
+      {
+        "id": "eth1/47",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 448.76874999999995,
+          "y": 8
+        },
+        "face": "front",
+        "group": "downlinks"
+      },
+      {
+        "id": "eth1/48",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 457.9895833333333,
+          "y": 8
+        },
+        "face": "front",
+        "group": "downlinks"
+      },
+      {
+        "id": "eth1/49",
+        "type": "QSFP28",
+        "speedsGbps": [
+          40,
+          100
+        ],
+        "pos": {
+          "x": 47.6625,
+          "y": 26
+        },
+        "face": "front",
+        "group": "uplinks"
+      },
+      {
+        "id": "eth1/50",
+        "type": "QSFP28",
+        "speedsGbps": [
+          40,
+          100
+        ],
+        "pos": {
+          "x": 102.98750000000001,
+          "y": 26
+        },
+        "face": "front",
+        "group": "uplinks"
+      },
+      {
+        "id": "eth1/51",
+        "type": "QSFP28",
+        "speedsGbps": [
+          40,
+          100
+        ],
+        "pos": {
+          "x": 158.3125,
+          "y": 26
+        },
+        "face": "front",
+        "group": "uplinks"
+      },
+      {
+        "id": "eth1/52",
+        "type": "QSFP28",
+        "speedsGbps": [
+          40,
+          100
+        ],
+        "pos": {
+          "x": 213.63750000000002,
+          "y": 26
+        },
+        "face": "front",
+        "group": "uplinks"
+      },
+      {
+        "id": "eth1/53",
+        "type": "QSFP28",
+        "speedsGbps": [
+          40,
+          100
+        ],
+        "pos": {
+          "x": 268.96250000000003,
+          "y": 26
+        },
+        "face": "front",
+        "group": "uplinks"
+      },
+      {
+        "id": "eth1/54",
+        "type": "QSFP28",
+        "speedsGbps": [
+          40,
+          100
+        ],
+        "pos": {
+          "x": 324.2875,
+          "y": 26
+        },
+        "face": "front",
+        "group": "uplinks"
+      },
+      {
+        "id": "eth1/55",
+        "type": "QSFP28",
+        "speedsGbps": [
+          40,
+          100
+        ],
+        "pos": {
+          "x": 379.61250000000007,
+          "y": 26
+        },
+        "face": "front",
+        "group": "uplinks"
+      },
+      {
+        "id": "eth1/56",
+        "type": "QSFP28",
+        "speedsGbps": [
+          40,
+          100
+        ],
+        "pos": {
+          "x": 434.93750000000006,
+          "y": 26
+        },
+        "face": "front",
+        "group": "uplinks"
+      },
+      {
+        "id": "mgmt0",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 241.3,
+          "y": 26
+        },
+        "face": "front",
+        "group": "mgmt"
+      }
+    ],
+    "category": "Switches"
+  },
+  {
+    "id": "fp.spine-switch-32x400",
+    "model": "Spine switch 32×400G",
+    "kind": "switch",
+    "heightU": 2,
+    "depthMm": 600,
+    "widthMm": 482.6,
+    "ports": [
+      {
+        "id": "eth1/1",
+        "type": "QSFP-DD",
+        "speedsGbps": [
+          100,
+          200,
+          400
+        ],
+        "pos": {
+          "x": 33.83125,
+          "y": 8
+        },
+        "face": "front",
+        "group": "fabric"
+      },
+      {
+        "id": "eth1/2",
+        "type": "QSFP-DD",
+        "speedsGbps": [
+          100,
+          200,
+          400
+        ],
+        "pos": {
+          "x": 61.493750000000006,
+          "y": 8
+        },
+        "face": "front",
+        "group": "fabric"
+      },
+      {
+        "id": "eth1/3",
+        "type": "QSFP-DD",
+        "speedsGbps": [
+          100,
+          200,
+          400
+        ],
+        "pos": {
+          "x": 89.15625,
+          "y": 8
+        },
+        "face": "front",
+        "group": "fabric"
+      },
+      {
+        "id": "eth1/4",
+        "type": "QSFP-DD",
+        "speedsGbps": [
+          100,
+          200,
+          400
+        ],
+        "pos": {
+          "x": 116.81875000000001,
+          "y": 8
+        },
+        "face": "front",
+        "group": "fabric"
+      },
+      {
+        "id": "eth1/5",
+        "type": "QSFP-DD",
+        "speedsGbps": [
+          100,
+          200,
+          400
+        ],
+        "pos": {
+          "x": 144.48125000000002,
+          "y": 8
+        },
+        "face": "front",
+        "group": "fabric"
+      },
+      {
+        "id": "eth1/6",
+        "type": "QSFP-DD",
+        "speedsGbps": [
+          100,
+          200,
+          400
+        ],
+        "pos": {
+          "x": 172.14375,
+          "y": 8
+        },
+        "face": "front",
+        "group": "fabric"
+      },
+      {
+        "id": "eth1/7",
+        "type": "QSFP-DD",
+        "speedsGbps": [
+          100,
+          200,
+          400
+        ],
+        "pos": {
+          "x": 199.80625000000003,
+          "y": 8
+        },
+        "face": "front",
+        "group": "fabric"
+      },
+      {
+        "id": "eth1/8",
+        "type": "QSFP-DD",
+        "speedsGbps": [
+          100,
+          200,
+          400
+        ],
+        "pos": {
+          "x": 227.46875000000003,
+          "y": 8
+        },
+        "face": "front",
+        "group": "fabric"
+      },
+      {
+        "id": "eth1/9",
+        "type": "QSFP-DD",
+        "speedsGbps": [
+          100,
+          200,
+          400
+        ],
+        "pos": {
+          "x": 255.13125000000002,
+          "y": 8
+        },
+        "face": "front",
+        "group": "fabric"
+      },
+      {
+        "id": "eth1/10",
+        "type": "QSFP-DD",
+        "speedsGbps": [
+          100,
+          200,
+          400
+        ],
+        "pos": {
+          "x": 282.79375,
+          "y": 8
+        },
+        "face": "front",
+        "group": "fabric"
+      },
+      {
+        "id": "eth1/11",
+        "type": "QSFP-DD",
+        "speedsGbps": [
+          100,
+          200,
+          400
+        ],
+        "pos": {
+          "x": 310.45625,
+          "y": 8
+        },
+        "face": "front",
+        "group": "fabric"
+      },
+      {
+        "id": "eth1/12",
+        "type": "QSFP-DD",
+        "speedsGbps": [
+          100,
+          200,
+          400
+        ],
+        "pos": {
+          "x": 338.11875000000003,
+          "y": 8
+        },
+        "face": "front",
+        "group": "fabric"
+      },
+      {
+        "id": "eth1/13",
+        "type": "QSFP-DD",
+        "speedsGbps": [
+          100,
+          200,
+          400
+        ],
+        "pos": {
+          "x": 365.78125000000006,
+          "y": 8
+        },
+        "face": "front",
+        "group": "fabric"
+      },
+      {
+        "id": "eth1/14",
+        "type": "QSFP-DD",
+        "speedsGbps": [
+          100,
+          200,
+          400
+        ],
+        "pos": {
+          "x": 393.44375,
+          "y": 8
+        },
+        "face": "front",
+        "group": "fabric"
+      },
+      {
+        "id": "eth1/15",
+        "type": "QSFP-DD",
+        "speedsGbps": [
+          100,
+          200,
+          400
+        ],
+        "pos": {
+          "x": 421.10625000000005,
+          "y": 8
+        },
+        "face": "front",
+        "group": "fabric"
+      },
+      {
+        "id": "eth1/16",
+        "type": "QSFP-DD",
+        "speedsGbps": [
+          100,
+          200,
+          400
+        ],
+        "pos": {
+          "x": 448.76875,
+          "y": 8
+        },
+        "face": "front",
+        "group": "fabric"
+      },
+      {
+        "id": "eth1/17",
+        "type": "QSFP-DD",
+        "speedsGbps": [
+          100,
+          200,
+          400
+        ],
+        "pos": {
+          "x": 33.83125,
+          "y": 26
+        },
+        "face": "front",
+        "group": "fabric"
+      },
+      {
+        "id": "eth1/18",
+        "type": "QSFP-DD",
+        "speedsGbps": [
+          100,
+          200,
+          400
+        ],
+        "pos": {
+          "x": 61.493750000000006,
+          "y": 26
+        },
+        "face": "front",
+        "group": "fabric"
+      },
+      {
+        "id": "eth1/19",
+        "type": "QSFP-DD",
+        "speedsGbps": [
+          100,
+          200,
+          400
+        ],
+        "pos": {
+          "x": 89.15625,
+          "y": 26
+        },
+        "face": "front",
+        "group": "fabric"
+      },
+      {
+        "id": "eth1/20",
+        "type": "QSFP-DD",
+        "speedsGbps": [
+          100,
+          200,
+          400
+        ],
+        "pos": {
+          "x": 116.81875000000001,
+          "y": 26
+        },
+        "face": "front",
+        "group": "fabric"
+      },
+      {
+        "id": "eth1/21",
+        "type": "QSFP-DD",
+        "speedsGbps": [
+          100,
+          200,
+          400
+        ],
+        "pos": {
+          "x": 144.48125000000002,
+          "y": 26
+        },
+        "face": "front",
+        "group": "fabric"
+      },
+      {
+        "id": "eth1/22",
+        "type": "QSFP-DD",
+        "speedsGbps": [
+          100,
+          200,
+          400
+        ],
+        "pos": {
+          "x": 172.14375,
+          "y": 26
+        },
+        "face": "front",
+        "group": "fabric"
+      },
+      {
+        "id": "eth1/23",
+        "type": "QSFP-DD",
+        "speedsGbps": [
+          100,
+          200,
+          400
+        ],
+        "pos": {
+          "x": 199.80625000000003,
+          "y": 26
+        },
+        "face": "front",
+        "group": "fabric"
+      },
+      {
+        "id": "eth1/24",
+        "type": "QSFP-DD",
+        "speedsGbps": [
+          100,
+          200,
+          400
+        ],
+        "pos": {
+          "x": 227.46875000000003,
+          "y": 26
+        },
+        "face": "front",
+        "group": "fabric"
+      },
+      {
+        "id": "eth1/25",
+        "type": "QSFP-DD",
+        "speedsGbps": [
+          100,
+          200,
+          400
+        ],
+        "pos": {
+          "x": 255.13125000000002,
+          "y": 26
+        },
+        "face": "front",
+        "group": "fabric"
+      },
+      {
+        "id": "eth1/26",
+        "type": "QSFP-DD",
+        "speedsGbps": [
+          100,
+          200,
+          400
+        ],
+        "pos": {
+          "x": 282.79375,
+          "y": 26
+        },
+        "face": "front",
+        "group": "fabric"
+      },
+      {
+        "id": "eth1/27",
+        "type": "QSFP-DD",
+        "speedsGbps": [
+          100,
+          200,
+          400
+        ],
+        "pos": {
+          "x": 310.45625,
+          "y": 26
+        },
+        "face": "front",
+        "group": "fabric"
+      },
+      {
+        "id": "eth1/28",
+        "type": "QSFP-DD",
+        "speedsGbps": [
+          100,
+          200,
+          400
+        ],
+        "pos": {
+          "x": 338.11875000000003,
+          "y": 26
+        },
+        "face": "front",
+        "group": "fabric"
+      },
+      {
+        "id": "eth1/29",
+        "type": "QSFP-DD",
+        "speedsGbps": [
+          100,
+          200,
+          400
+        ],
+        "pos": {
+          "x": 365.78125000000006,
+          "y": 26
+        },
+        "face": "front",
+        "group": "fabric"
+      },
+      {
+        "id": "eth1/30",
+        "type": "QSFP-DD",
+        "speedsGbps": [
+          100,
+          200,
+          400
+        ],
+        "pos": {
+          "x": 393.44375,
+          "y": 26
+        },
+        "face": "front",
+        "group": "fabric"
+      },
+      {
+        "id": "eth1/31",
+        "type": "QSFP-DD",
+        "speedsGbps": [
+          100,
+          200,
+          400
+        ],
+        "pos": {
+          "x": 421.10625000000005,
+          "y": 26
+        },
+        "face": "front",
+        "group": "fabric"
+      },
+      {
+        "id": "eth1/32",
+        "type": "QSFP-DD",
+        "speedsGbps": [
+          100,
+          200,
+          400
+        ],
+        "pos": {
+          "x": 448.76875,
+          "y": 26
+        },
+        "face": "front",
+        "group": "fabric"
+      },
+      {
+        "id": "mgmt0",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 241.3,
+          "y": 26
+        },
+        "face": "front",
+        "group": "mgmt"
+      }
+    ],
+    "category": "Switches"
+  },
+  {
+    "id": "fp.mgmt-switch-48x1g-4x10",
+    "model": "Management switch 48×1G + 4×10G",
+    "kind": "switch",
+    "heightU": 1,
+    "depthMm": 400,
+    "widthMm": 482.6,
+    "ports": [
+      {
+        "id": "ge1",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 24.610416666666666,
+          "y": 8
+        },
+        "face": "front",
+        "group": "access"
+      },
+      {
+        "id": "ge2",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 33.83125,
+          "y": 8
+        },
+        "face": "front",
+        "group": "access"
+      },
+      {
+        "id": "ge3",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 43.05208333333333,
+          "y": 8
+        },
+        "face": "front",
+        "group": "access"
+      },
+      {
+        "id": "ge4",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 52.27291666666667,
+          "y": 8
+        },
+        "face": "front",
+        "group": "access"
+      },
+      {
+        "id": "ge5",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 61.49375,
+          "y": 8
+        },
+        "face": "front",
+        "group": "access"
+      },
+      {
+        "id": "ge6",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 70.71458333333332,
+          "y": 8
+        },
+        "face": "front",
+        "group": "access"
+      },
+      {
+        "id": "ge7",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 79.93541666666667,
+          "y": 8
+        },
+        "face": "front",
+        "group": "access"
+      },
+      {
+        "id": "ge8",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 89.15625,
+          "y": 8
+        },
+        "face": "front",
+        "group": "access"
+      },
+      {
+        "id": "ge9",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 98.37708333333333,
+          "y": 8
+        },
+        "face": "front",
+        "group": "access"
+      },
+      {
+        "id": "ge10",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 107.59791666666666,
+          "y": 8
+        },
+        "face": "front",
+        "group": "access"
+      },
+      {
+        "id": "ge11",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 116.81875,
+          "y": 8
+        },
+        "face": "front",
+        "group": "access"
+      },
+      {
+        "id": "ge12",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 126.03958333333333,
+          "y": 8
+        },
+        "face": "front",
+        "group": "access"
+      },
+      {
+        "id": "ge13",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 135.26041666666669,
+          "y": 8
+        },
+        "face": "front",
+        "group": "access"
+      },
+      {
+        "id": "ge14",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 144.48125000000002,
+          "y": 8
+        },
+        "face": "front",
+        "group": "access"
+      },
+      {
+        "id": "ge15",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 153.70208333333335,
+          "y": 8
+        },
+        "face": "front",
+        "group": "access"
+      },
+      {
+        "id": "ge16",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 162.92291666666668,
+          "y": 8
+        },
+        "face": "front",
+        "group": "access"
+      },
+      {
+        "id": "ge17",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 172.14375,
+          "y": 8
+        },
+        "face": "front",
+        "group": "access"
+      },
+      {
+        "id": "ge18",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 181.36458333333334,
+          "y": 8
+        },
+        "face": "front",
+        "group": "access"
+      },
+      {
+        "id": "ge19",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 190.58541666666667,
+          "y": 8
+        },
+        "face": "front",
+        "group": "access"
+      },
+      {
+        "id": "ge20",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 199.80625,
+          "y": 8
+        },
+        "face": "front",
+        "group": "access"
+      },
+      {
+        "id": "ge21",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 209.02708333333334,
+          "y": 8
+        },
+        "face": "front",
+        "group": "access"
+      },
+      {
+        "id": "ge22",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 218.24791666666667,
+          "y": 8
+        },
+        "face": "front",
+        "group": "access"
+      },
+      {
+        "id": "ge23",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 227.46875,
+          "y": 8
+        },
+        "face": "front",
+        "group": "access"
+      },
+      {
+        "id": "ge24",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 236.68958333333333,
+          "y": 8
+        },
+        "face": "front",
+        "group": "access"
+      },
+      {
+        "id": "ge25",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 245.9104166666667,
+          "y": 8
+        },
+        "face": "front",
+        "group": "access"
+      },
+      {
+        "id": "ge26",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 255.13125000000002,
+          "y": 8
+        },
+        "face": "front",
+        "group": "access"
+      },
+      {
+        "id": "ge27",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 264.3520833333333,
+          "y": 8
+        },
+        "face": "front",
+        "group": "access"
+      },
+      {
+        "id": "ge28",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 273.57291666666663,
+          "y": 8
+        },
+        "face": "front",
+        "group": "access"
+      },
+      {
+        "id": "ge29",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 282.79375,
+          "y": 8
+        },
+        "face": "front",
+        "group": "access"
+      },
+      {
+        "id": "ge30",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 292.0145833333333,
+          "y": 8
+        },
+        "face": "front",
+        "group": "access"
+      },
+      {
+        "id": "ge31",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 301.23541666666665,
+          "y": 8
+        },
+        "face": "front",
+        "group": "access"
+      },
+      {
+        "id": "ge32",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 310.45624999999995,
+          "y": 8
+        },
+        "face": "front",
+        "group": "access"
+      },
+      {
+        "id": "ge33",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 319.6770833333333,
+          "y": 8
+        },
+        "face": "front",
+        "group": "access"
+      },
+      {
+        "id": "ge34",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 328.8979166666667,
+          "y": 8
+        },
+        "face": "front",
+        "group": "access"
+      },
+      {
+        "id": "ge35",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 338.11875,
+          "y": 8
+        },
+        "face": "front",
+        "group": "access"
+      },
+      {
+        "id": "ge36",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 347.33958333333334,
+          "y": 8
+        },
+        "face": "front",
+        "group": "access"
+      },
+      {
+        "id": "ge37",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 356.56041666666664,
+          "y": 8
+        },
+        "face": "front",
+        "group": "access"
+      },
+      {
+        "id": "ge38",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 365.78125,
+          "y": 8
+        },
+        "face": "front",
+        "group": "access"
+      },
+      {
+        "id": "ge39",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 375.0020833333333,
+          "y": 8
+        },
+        "face": "front",
+        "group": "access"
+      },
+      {
+        "id": "ge40",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 384.22291666666666,
+          "y": 8
+        },
+        "face": "front",
+        "group": "access"
+      },
+      {
+        "id": "ge41",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 393.44374999999997,
+          "y": 8
+        },
+        "face": "front",
+        "group": "access"
+      },
+      {
+        "id": "ge42",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 402.6645833333333,
+          "y": 8
+        },
+        "face": "front",
+        "group": "access"
+      },
+      {
+        "id": "ge43",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 411.88541666666663,
+          "y": 8
+        },
+        "face": "front",
+        "group": "access"
+      },
+      {
+        "id": "ge44",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 421.10625,
+          "y": 8
+        },
+        "face": "front",
+        "group": "access"
+      },
+      {
+        "id": "ge45",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 430.3270833333333,
+          "y": 8
+        },
+        "face": "front",
+        "group": "access"
+      },
+      {
+        "id": "ge46",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 439.54791666666665,
+          "y": 8
+        },
+        "face": "front",
+        "group": "access"
+      },
+      {
+        "id": "ge47",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 448.76874999999995,
+          "y": 8
+        },
+        "face": "front",
+        "group": "access"
+      },
+      {
+        "id": "ge48",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 457.9895833333333,
+          "y": 8
+        },
+        "face": "front",
+        "group": "access"
+      },
+      {
+        "id": "xe1",
+        "type": "SFP+",
+        "speedsGbps": [
+          1,
+          10
+        ],
+        "pos": {
+          "x": 75.325,
+          "y": 8
+        },
+        "face": "front",
+        "group": "uplinks"
+      },
+      {
+        "id": "xe2",
+        "type": "SFP+",
+        "speedsGbps": [
+          1,
+          10
+        ],
+        "pos": {
+          "x": 185.97500000000002,
+          "y": 8
+        },
+        "face": "front",
+        "group": "uplinks"
+      },
+      {
+        "id": "xe3",
+        "type": "SFP+",
+        "speedsGbps": [
+          1,
+          10
+        ],
+        "pos": {
+          "x": 296.625,
+          "y": 8
+        },
+        "face": "front",
+        "group": "uplinks"
+      },
+      {
+        "id": "xe4",
+        "type": "SFP+",
+        "speedsGbps": [
+          1,
+          10
+        ],
+        "pos": {
+          "x": 407.27500000000003,
+          "y": 8
+        },
+        "face": "front",
+        "group": "uplinks"
+      }
+    ],
+    "category": "Switches"
+  },
+  {
+    "id": "fp.server-1u",
+    "model": "1U server",
+    "kind": "server",
+    "heightU": 1,
+    "depthMm": 750,
+    "widthMm": 482.6,
+    "ports": [
+      {
+        "id": "eth0",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 130.65,
+          "y": 8
+        },
+        "face": "front",
+        "group": "data"
+      },
+      {
+        "id": "eth1",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 351.95000000000005,
+          "y": 8
+        },
+        "face": "front",
+        "group": "data"
+      },
+      {
+        "id": "bmc0",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 241.3,
+          "y": 8
+        },
+        "face": "front",
+        "group": "mgmt"
+      }
+    ],
+    "category": "Servers"
+  },
+  {
+    "id": "fp.server-2u",
+    "model": "2U server",
+    "kind": "server",
+    "heightU": 2,
+    "depthMm": 800,
+    "widthMm": 482.6,
+    "ports": [
+      {
+        "id": "eth0",
+        "type": "QSFP28",
+        "speedsGbps": [
+          40,
+          100
+        ],
+        "pos": {
+          "x": 130.65,
+          "y": 26
+        },
+        "face": "front",
+        "group": "data"
+      },
+      {
+        "id": "eth1",
+        "type": "QSFP28",
+        "speedsGbps": [
+          40,
+          100
+        ],
+        "pos": {
+          "x": 351.95000000000005,
+          "y": 26
+        },
+        "face": "front",
+        "group": "data"
+      },
+      {
+        "id": "eth2",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 130.65,
+          "y": 8
+        },
+        "face": "front",
+        "group": "data"
+      },
+      {
+        "id": "eth3",
+        "type": "SFP28",
+        "speedsGbps": [
+          10,
+          25
+        ],
+        "pos": {
+          "x": 351.95000000000005,
+          "y": 8
+        },
+        "face": "front",
+        "group": "data"
+      },
+      {
+        "id": "bmc0",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 241.3,
+          "y": 8
+        },
+        "face": "front",
+        "group": "mgmt"
+      }
+    ],
+    "category": "Servers"
+  },
+  {
+    "id": "fp.gpu-server-4u",
+    "model": "GPU server 4U",
+    "kind": "server",
+    "heightU": 4,
+    "depthMm": 900,
+    "widthMm": 482.6,
+    "ports": [
+      {
+        "id": "osfp0",
+        "type": "OSFP",
+        "speedsGbps": [
+          400,
+          800
+        ],
+        "pos": {
+          "x": 47.6625,
+          "y": 44
+        },
+        "face": "front",
+        "group": "fabric"
+      },
+      {
+        "id": "osfp1",
+        "type": "OSFP",
+        "speedsGbps": [
+          400,
+          800
+        ],
+        "pos": {
+          "x": 102.98750000000001,
+          "y": 44
+        },
+        "face": "front",
+        "group": "fabric"
+      },
+      {
+        "id": "osfp2",
+        "type": "OSFP",
+        "speedsGbps": [
+          400,
+          800
+        ],
+        "pos": {
+          "x": 158.3125,
+          "y": 44
+        },
+        "face": "front",
+        "group": "fabric"
+      },
+      {
+        "id": "osfp3",
+        "type": "OSFP",
+        "speedsGbps": [
+          400,
+          800
+        ],
+        "pos": {
+          "x": 213.63750000000002,
+          "y": 44
+        },
+        "face": "front",
+        "group": "fabric"
+      },
+      {
+        "id": "osfp4",
+        "type": "OSFP",
+        "speedsGbps": [
+          400,
+          800
+        ],
+        "pos": {
+          "x": 268.96250000000003,
+          "y": 44
+        },
+        "face": "front",
+        "group": "fabric"
+      },
+      {
+        "id": "osfp5",
+        "type": "OSFP",
+        "speedsGbps": [
+          400,
+          800
+        ],
+        "pos": {
+          "x": 324.2875,
+          "y": 44
+        },
+        "face": "front",
+        "group": "fabric"
+      },
+      {
+        "id": "osfp6",
+        "type": "OSFP",
+        "speedsGbps": [
+          400,
+          800
+        ],
+        "pos": {
+          "x": 379.61250000000007,
+          "y": 44
+        },
+        "face": "front",
+        "group": "fabric"
+      },
+      {
+        "id": "osfp7",
+        "type": "OSFP",
+        "speedsGbps": [
+          400,
+          800
+        ],
+        "pos": {
+          "x": 434.93750000000006,
+          "y": 44
+        },
+        "face": "front",
+        "group": "fabric"
+      },
+      {
+        "id": "eth0",
+        "type": "QSFP28",
+        "speedsGbps": [
+          40,
+          100
+        ],
+        "pos": {
+          "x": 130.65,
+          "y": 8
+        },
+        "face": "front",
+        "group": "data"
+      },
+      {
+        "id": "eth1",
+        "type": "QSFP28",
+        "speedsGbps": [
+          40,
+          100
+        ],
+        "pos": {
+          "x": 351.95000000000005,
+          "y": 8
+        },
+        "face": "front",
+        "group": "data"
+      },
+      {
+        "id": "bmc0",
+        "type": "RJ45",
+        "speedsGbps": [
+          1
+        ],
+        "pos": {
+          "x": 241.3,
+          "y": 8
+        },
+        "face": "front",
+        "group": "mgmt"
+      }
+    ],
+    "category": "Servers"
+  },
+  {
+    "id": "fp.fiber-patch-panel-24lc",
+    "model": "Fiber patch panel 24× LC duplex",
+    "kind": "patch-panel",
+    "heightU": 1,
+    "depthMm": 300,
+    "widthMm": 482.6,
+    "ports": [
+      {
+        "id": "f1",
+        "type": "LC",
+        "speedsGbps": [
+          1,
+          10,
+          25,
+          100
+        ],
+        "pos": {
+          "x": 29.22083333333333,
+          "y": 8
+        },
+        "face": "front",
+        "group": "front"
+      },
+      {
+        "id": "f2",
+        "type": "LC",
+        "speedsGbps": [
+          1,
+          10,
+          25,
+          100
+        ],
+        "pos": {
+          "x": 47.662499999999994,
+          "y": 8
+        },
+        "face": "front",
+        "group": "front"
+      },
+      {
+        "id": "f3",
+        "type": "LC",
+        "speedsGbps": [
+          1,
+          10,
+          25,
+          100
+        ],
+        "pos": {
+          "x": 66.10416666666667,
+          "y": 8
+        },
+        "face": "front",
+        "group": "front"
+      },
+      {
+        "id": "f4",
+        "type": "LC",
+        "speedsGbps": [
+          1,
+          10,
+          25,
+          100
+        ],
+        "pos": {
+          "x": 84.54583333333333,
+          "y": 8
+        },
+        "face": "front",
+        "group": "front"
+      },
+      {
+        "id": "f5",
+        "type": "LC",
+        "speedsGbps": [
+          1,
+          10,
+          25,
+          100
+        ],
+        "pos": {
+          "x": 102.9875,
+          "y": 8
+        },
+        "face": "front",
+        "group": "front"
+      },
+      {
+        "id": "f6",
+        "type": "LC",
+        "speedsGbps": [
+          1,
+          10,
+          25,
+          100
+        ],
+        "pos": {
+          "x": 121.42916666666666,
+          "y": 8
+        },
+        "face": "front",
+        "group": "front"
+      },
+      {
+        "id": "f7",
+        "type": "LC",
+        "speedsGbps": [
+          1,
+          10,
+          25,
+          100
+        ],
+        "pos": {
+          "x": 139.87083333333334,
+          "y": 8
+        },
+        "face": "front",
+        "group": "front"
+      },
+      {
+        "id": "f8",
+        "type": "LC",
+        "speedsGbps": [
+          1,
+          10,
+          25,
+          100
+        ],
+        "pos": {
+          "x": 158.3125,
+          "y": 8
+        },
+        "face": "front",
+        "group": "front"
+      },
+      {
+        "id": "f9",
+        "type": "LC",
+        "speedsGbps": [
+          1,
+          10,
+          25,
+          100
+        ],
+        "pos": {
+          "x": 176.75416666666666,
+          "y": 8
+        },
+        "face": "front",
+        "group": "front"
+      },
+      {
+        "id": "f10",
+        "type": "LC",
+        "speedsGbps": [
+          1,
+          10,
+          25,
+          100
+        ],
+        "pos": {
+          "x": 195.19583333333333,
+          "y": 8
+        },
+        "face": "front",
+        "group": "front"
+      },
+      {
+        "id": "f11",
+        "type": "LC",
+        "speedsGbps": [
+          1,
+          10,
+          25,
+          100
+        ],
+        "pos": {
+          "x": 213.6375,
+          "y": 8
+        },
+        "face": "front",
+        "group": "front"
+      },
+      {
+        "id": "f12",
+        "type": "LC",
+        "speedsGbps": [
+          1,
+          10,
+          25,
+          100
+        ],
+        "pos": {
+          "x": 232.07916666666665,
+          "y": 8
+        },
+        "face": "front",
+        "group": "front"
+      },
+      {
+        "id": "f13",
+        "type": "LC",
+        "speedsGbps": [
+          1,
+          10,
+          25,
+          100
+        ],
+        "pos": {
+          "x": 250.52083333333334,
+          "y": 8
+        },
+        "face": "front",
+        "group": "front"
+      },
+      {
+        "id": "f14",
+        "type": "LC",
+        "speedsGbps": [
+          1,
+          10,
+          25,
+          100
+        ],
+        "pos": {
+          "x": 268.96250000000003,
+          "y": 8
+        },
+        "face": "front",
+        "group": "front"
+      },
+      {
+        "id": "f15",
+        "type": "LC",
+        "speedsGbps": [
+          1,
+          10,
+          25,
+          100
+        ],
+        "pos": {
+          "x": 287.4041666666667,
+          "y": 8
+        },
+        "face": "front",
+        "group": "front"
+      },
+      {
+        "id": "f16",
+        "type": "LC",
+        "speedsGbps": [
+          1,
+          10,
+          25,
+          100
+        ],
+        "pos": {
+          "x": 305.84583333333336,
+          "y": 8
+        },
+        "face": "front",
+        "group": "front"
+      },
+      {
+        "id": "f17",
+        "type": "LC",
+        "speedsGbps": [
+          1,
+          10,
+          25,
+          100
+        ],
+        "pos": {
+          "x": 324.2875,
+          "y": 8
+        },
+        "face": "front",
+        "group": "front"
+      },
+      {
+        "id": "f18",
+        "type": "LC",
+        "speedsGbps": [
+          1,
+          10,
+          25,
+          100
+        ],
+        "pos": {
+          "x": 342.7291666666667,
+          "y": 8
+        },
+        "face": "front",
+        "group": "front"
+      },
+      {
+        "id": "f19",
+        "type": "LC",
+        "speedsGbps": [
+          1,
+          10,
+          25,
+          100
+        ],
+        "pos": {
+          "x": 361.17083333333335,
+          "y": 8
+        },
+        "face": "front",
+        "group": "front"
+      },
+      {
+        "id": "f20",
+        "type": "LC",
+        "speedsGbps": [
+          1,
+          10,
+          25,
+          100
+        ],
+        "pos": {
+          "x": 379.6125,
+          "y": 8
+        },
+        "face": "front",
+        "group": "front"
+      },
+      {
+        "id": "f21",
+        "type": "LC",
+        "speedsGbps": [
+          1,
+          10,
+          25,
+          100
+        ],
+        "pos": {
+          "x": 398.0541666666667,
+          "y": 8
+        },
+        "face": "front",
+        "group": "front"
+      },
+      {
+        "id": "f22",
+        "type": "LC",
+        "speedsGbps": [
+          1,
+          10,
+          25,
+          100
+        ],
+        "pos": {
+          "x": 416.49583333333334,
+          "y": 8
+        },
+        "face": "front",
+        "group": "front"
+      },
+      {
+        "id": "f23",
+        "type": "LC",
+        "speedsGbps": [
+          1,
+          10,
+          25,
+          100
+        ],
+        "pos": {
+          "x": 434.9375,
+          "y": 8
+        },
+        "face": "front",
+        "group": "front"
+      },
+      {
+        "id": "f24",
+        "type": "LC",
+        "speedsGbps": [
+          1,
+          10,
+          25,
+          100
+        ],
+        "pos": {
+          "x": 453.37916666666666,
+          "y": 8
+        },
+        "face": "front",
+        "group": "front"
+      },
+      {
+        "id": "r1",
+        "type": "LC",
+        "speedsGbps": [
+          1,
+          10,
+          25,
+          100
+        ],
+        "pos": {
+          "x": 29.22083333333333,
+          "y": 8
+        },
+        "face": "rear",
+        "group": "rear"
+      },
+      {
+        "id": "r2",
+        "type": "LC",
+        "speedsGbps": [
+          1,
+          10,
+          25,
+          100
+        ],
+        "pos": {
+          "x": 47.662499999999994,
+          "y": 8
+        },
+        "face": "rear",
+        "group": "rear"
+      },
+      {
+        "id": "r3",
+        "type": "LC",
+        "speedsGbps": [
+          1,
+          10,
+          25,
+          100
+        ],
+        "pos": {
+          "x": 66.10416666666667,
+          "y": 8
+        },
+        "face": "rear",
+        "group": "rear"
+      },
+      {
+        "id": "r4",
+        "type": "LC",
+        "speedsGbps": [
+          1,
+          10,
+          25,
+          100
+        ],
+        "pos": {
+          "x": 84.54583333333333,
+          "y": 8
+        },
+        "face": "rear",
+        "group": "rear"
+      },
+      {
+        "id": "r5",
+        "type": "LC",
+        "speedsGbps": [
+          1,
+          10,
+          25,
+          100
+        ],
+        "pos": {
+          "x": 102.9875,
+          "y": 8
+        },
+        "face": "rear",
+        "group": "rear"
+      },
+      {
+        "id": "r6",
+        "type": "LC",
+        "speedsGbps": [
+          1,
+          10,
+          25,
+          100
+        ],
+        "pos": {
+          "x": 121.42916666666666,
+          "y": 8
+        },
+        "face": "rear",
+        "group": "rear"
+      },
+      {
+        "id": "r7",
+        "type": "LC",
+        "speedsGbps": [
+          1,
+          10,
+          25,
+          100
+        ],
+        "pos": {
+          "x": 139.87083333333334,
+          "y": 8
+        },
+        "face": "rear",
+        "group": "rear"
+      },
+      {
+        "id": "r8",
+        "type": "LC",
+        "speedsGbps": [
+          1,
+          10,
+          25,
+          100
+        ],
+        "pos": {
+          "x": 158.3125,
+          "y": 8
+        },
+        "face": "rear",
+        "group": "rear"
+      },
+      {
+        "id": "r9",
+        "type": "LC",
+        "speedsGbps": [
+          1,
+          10,
+          25,
+          100
+        ],
+        "pos": {
+          "x": 176.75416666666666,
+          "y": 8
+        },
+        "face": "rear",
+        "group": "rear"
+      },
+      {
+        "id": "r10",
+        "type": "LC",
+        "speedsGbps": [
+          1,
+          10,
+          25,
+          100
+        ],
+        "pos": {
+          "x": 195.19583333333333,
+          "y": 8
+        },
+        "face": "rear",
+        "group": "rear"
+      },
+      {
+        "id": "r11",
+        "type": "LC",
+        "speedsGbps": [
+          1,
+          10,
+          25,
+          100
+        ],
+        "pos": {
+          "x": 213.6375,
+          "y": 8
+        },
+        "face": "rear",
+        "group": "rear"
+      },
+      {
+        "id": "r12",
+        "type": "LC",
+        "speedsGbps": [
+          1,
+          10,
+          25,
+          100
+        ],
+        "pos": {
+          "x": 232.07916666666665,
+          "y": 8
+        },
+        "face": "rear",
+        "group": "rear"
+      },
+      {
+        "id": "r13",
+        "type": "LC",
+        "speedsGbps": [
+          1,
+          10,
+          25,
+          100
+        ],
+        "pos": {
+          "x": 250.52083333333334,
+          "y": 8
+        },
+        "face": "rear",
+        "group": "rear"
+      },
+      {
+        "id": "r14",
+        "type": "LC",
+        "speedsGbps": [
+          1,
+          10,
+          25,
+          100
+        ],
+        "pos": {
+          "x": 268.96250000000003,
+          "y": 8
+        },
+        "face": "rear",
+        "group": "rear"
+      },
+      {
+        "id": "r15",
+        "type": "LC",
+        "speedsGbps": [
+          1,
+          10,
+          25,
+          100
+        ],
+        "pos": {
+          "x": 287.4041666666667,
+          "y": 8
+        },
+        "face": "rear",
+        "group": "rear"
+      },
+      {
+        "id": "r16",
+        "type": "LC",
+        "speedsGbps": [
+          1,
+          10,
+          25,
+          100
+        ],
+        "pos": {
+          "x": 305.84583333333336,
+          "y": 8
+        },
+        "face": "rear",
+        "group": "rear"
+      },
+      {
+        "id": "r17",
+        "type": "LC",
+        "speedsGbps": [
+          1,
+          10,
+          25,
+          100
+        ],
+        "pos": {
+          "x": 324.2875,
+          "y": 8
+        },
+        "face": "rear",
+        "group": "rear"
+      },
+      {
+        "id": "r18",
+        "type": "LC",
+        "speedsGbps": [
+          1,
+          10,
+          25,
+          100
+        ],
+        "pos": {
+          "x": 342.7291666666667,
+          "y": 8
+        },
+        "face": "rear",
+        "group": "rear"
+      },
+      {
+        "id": "r19",
+        "type": "LC",
+        "speedsGbps": [
+          1,
+          10,
+          25,
+          100
+        ],
+        "pos": {
+          "x": 361.17083333333335,
+          "y": 8
+        },
+        "face": "rear",
+        "group": "rear"
+      },
+      {
+        "id": "r20",
+        "type": "LC",
+        "speedsGbps": [
+          1,
+          10,
+          25,
+          100
+        ],
+        "pos": {
+          "x": 379.6125,
+          "y": 8
+        },
+        "face": "rear",
+        "group": "rear"
+      },
+      {
+        "id": "r21",
+        "type": "LC",
+        "speedsGbps": [
+          1,
+          10,
+          25,
+          100
+        ],
+        "pos": {
+          "x": 398.0541666666667,
+          "y": 8
+        },
+        "face": "rear",
+        "group": "rear"
+      },
+      {
+        "id": "r22",
+        "type": "LC",
+        "speedsGbps": [
+          1,
+          10,
+          25,
+          100
+        ],
+        "pos": {
+          "x": 416.49583333333334,
+          "y": 8
+        },
+        "face": "rear",
+        "group": "rear"
+      },
+      {
+        "id": "r23",
+        "type": "LC",
+        "speedsGbps": [
+          1,
+          10,
+          25,
+          100
+        ],
+        "pos": {
+          "x": 434.9375,
+          "y": 8
+        },
+        "face": "rear",
+        "group": "rear"
+      },
+      {
+        "id": "r24",
+        "type": "LC",
+        "speedsGbps": [
+          1,
+          10,
+          25,
+          100
+        ],
+        "pos": {
+          "x": 453.37916666666666,
+          "y": 8
+        },
+        "face": "rear",
+        "group": "rear"
+      }
+    ],
+    "category": "Patch panels"
+  },
+  {
+    "id": "fp.mpo-patch-panel-12",
+    "model": "MPO patch panel 12× MPO-12",
+    "kind": "patch-panel",
+    "heightU": 1,
+    "depthMm": 300,
+    "widthMm": 482.6,
+    "ports": [
+      {
+        "id": "f1",
+        "type": "MPO-12",
+        "speedsGbps": [
+          40,
+          100,
+          400
+        ],
+        "pos": {
+          "x": 38.44166666666666,
+          "y": 8
+        },
+        "face": "front",
+        "group": "front"
+      },
+      {
+        "id": "f2",
+        "type": "MPO-12",
+        "speedsGbps": [
+          40,
+          100,
+          400
+        ],
+        "pos": {
+          "x": 75.325,
+          "y": 8
+        },
+        "face": "front",
+        "group": "front"
+      },
+      {
+        "id": "f3",
+        "type": "MPO-12",
+        "speedsGbps": [
+          40,
+          100,
+          400
+        ],
+        "pos": {
+          "x": 112.20833333333333,
+          "y": 8
+        },
+        "face": "front",
+        "group": "front"
+      },
+      {
+        "id": "f4",
+        "type": "MPO-12",
+        "speedsGbps": [
+          40,
+          100,
+          400
+        ],
+        "pos": {
+          "x": 149.09166666666667,
+          "y": 8
+        },
+        "face": "front",
+        "group": "front"
+      },
+      {
+        "id": "f5",
+        "type": "MPO-12",
+        "speedsGbps": [
+          40,
+          100,
+          400
+        ],
+        "pos": {
+          "x": 185.975,
+          "y": 8
+        },
+        "face": "front",
+        "group": "front"
+      },
+      {
+        "id": "f6",
+        "type": "MPO-12",
+        "speedsGbps": [
+          40,
+          100,
+          400
+        ],
+        "pos": {
+          "x": 222.85833333333332,
+          "y": 8
+        },
+        "face": "front",
+        "group": "front"
+      },
+      {
+        "id": "f7",
+        "type": "MPO-12",
+        "speedsGbps": [
+          40,
+          100,
+          400
+        ],
+        "pos": {
+          "x": 259.7416666666667,
+          "y": 8
+        },
+        "face": "front",
+        "group": "front"
+      },
+      {
+        "id": "f8",
+        "type": "MPO-12",
+        "speedsGbps": [
+          40,
+          100,
+          400
+        ],
+        "pos": {
+          "x": 296.625,
+          "y": 8
+        },
+        "face": "front",
+        "group": "front"
+      },
+      {
+        "id": "f9",
+        "type": "MPO-12",
+        "speedsGbps": [
+          40,
+          100,
+          400
+        ],
+        "pos": {
+          "x": 333.5083333333333,
+          "y": 8
+        },
+        "face": "front",
+        "group": "front"
+      },
+      {
+        "id": "f10",
+        "type": "MPO-12",
+        "speedsGbps": [
+          40,
+          100,
+          400
+        ],
+        "pos": {
+          "x": 370.39166666666665,
+          "y": 8
+        },
+        "face": "front",
+        "group": "front"
+      },
+      {
+        "id": "f11",
+        "type": "MPO-12",
+        "speedsGbps": [
+          40,
+          100,
+          400
+        ],
+        "pos": {
+          "x": 407.275,
+          "y": 8
+        },
+        "face": "front",
+        "group": "front"
+      },
+      {
+        "id": "f12",
+        "type": "MPO-12",
+        "speedsGbps": [
+          40,
+          100,
+          400
+        ],
+        "pos": {
+          "x": 444.1583333333333,
+          "y": 8
+        },
+        "face": "front",
+        "group": "front"
+      },
+      {
+        "id": "r1",
+        "type": "MPO-12",
+        "speedsGbps": [
+          40,
+          100,
+          400
+        ],
+        "pos": {
+          "x": 38.44166666666666,
+          "y": 8
+        },
+        "face": "rear",
+        "group": "rear"
+      },
+      {
+        "id": "r2",
+        "type": "MPO-12",
+        "speedsGbps": [
+          40,
+          100,
+          400
+        ],
+        "pos": {
+          "x": 75.325,
+          "y": 8
+        },
+        "face": "rear",
+        "group": "rear"
+      },
+      {
+        "id": "r3",
+        "type": "MPO-12",
+        "speedsGbps": [
+          40,
+          100,
+          400
+        ],
+        "pos": {
+          "x": 112.20833333333333,
+          "y": 8
+        },
+        "face": "rear",
+        "group": "rear"
+      },
+      {
+        "id": "r4",
+        "type": "MPO-12",
+        "speedsGbps": [
+          40,
+          100,
+          400
+        ],
+        "pos": {
+          "x": 149.09166666666667,
+          "y": 8
+        },
+        "face": "rear",
+        "group": "rear"
+      },
+      {
+        "id": "r5",
+        "type": "MPO-12",
+        "speedsGbps": [
+          40,
+          100,
+          400
+        ],
+        "pos": {
+          "x": 185.975,
+          "y": 8
+        },
+        "face": "rear",
+        "group": "rear"
+      },
+      {
+        "id": "r6",
+        "type": "MPO-12",
+        "speedsGbps": [
+          40,
+          100,
+          400
+        ],
+        "pos": {
+          "x": 222.85833333333332,
+          "y": 8
+        },
+        "face": "rear",
+        "group": "rear"
+      },
+      {
+        "id": "r7",
+        "type": "MPO-12",
+        "speedsGbps": [
+          40,
+          100,
+          400
+        ],
+        "pos": {
+          "x": 259.7416666666667,
+          "y": 8
+        },
+        "face": "rear",
+        "group": "rear"
+      },
+      {
+        "id": "r8",
+        "type": "MPO-12",
+        "speedsGbps": [
+          40,
+          100,
+          400
+        ],
+        "pos": {
+          "x": 296.625,
+          "y": 8
+        },
+        "face": "rear",
+        "group": "rear"
+      },
+      {
+        "id": "r9",
+        "type": "MPO-12",
+        "speedsGbps": [
+          40,
+          100,
+          400
+        ],
+        "pos": {
+          "x": 333.5083333333333,
+          "y": 8
+        },
+        "face": "rear",
+        "group": "rear"
+      },
+      {
+        "id": "r10",
+        "type": "MPO-12",
+        "speedsGbps": [
+          40,
+          100,
+          400
+        ],
+        "pos": {
+          "x": 370.39166666666665,
+          "y": 8
+        },
+        "face": "rear",
+        "group": "rear"
+      },
+      {
+        "id": "r11",
+        "type": "MPO-12",
+        "speedsGbps": [
+          40,
+          100,
+          400
+        ],
+        "pos": {
+          "x": 407.275,
+          "y": 8
+        },
+        "face": "rear",
+        "group": "rear"
+      },
+      {
+        "id": "r12",
+        "type": "MPO-12",
+        "speedsGbps": [
+          40,
+          100,
+          400
+        ],
+        "pos": {
+          "x": 444.1583333333333,
+          "y": 8
+        },
+        "face": "rear",
+        "group": "rear"
+      }
+    ],
+    "category": "Patch panels"
+  },
+  {
+    "id": "fp.blank-panel-1u",
+    "model": "Blank panel 1U",
+    "kind": "generic",
+    "heightU": 1,
+    "depthMm": 10,
+    "widthMm": 482.6,
+    "ports": [],
+    "category": "Panels"
+  }
+]

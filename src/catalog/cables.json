@@ -1,0 +1,151 @@
+[
+  {
+    "id": "cbl.om4-duplex",
+    "name": "OM4 duplex",
+    "media": "OM4",
+    "mediaClass": "fiber",
+    "endA": "LC",
+    "endB": "LC",
+    "color": "#2dd4bf",
+    "bendRadiusMm": 30,
+    "diameterMm": 2
+  },
+  {
+    "id": "cbl.os2-duplex",
+    "name": "OS2 duplex",
+    "media": "OS2",
+    "mediaClass": "fiber",
+    "endA": "LC",
+    "endB": "LC",
+    "color": "#facc15",
+    "bendRadiusMm": 30,
+    "diameterMm": 2
+  },
+  {
+    "id": "cbl.om4-mpo-trunk",
+    "name": "OM4 MPO trunk",
+    "media": "OM4",
+    "mediaClass": "fiber",
+    "endA": "MPO-12",
+    "endB": "MPO-12",
+    "color": "#2dd4bf",
+    "bendRadiusMm": 40,
+    "diameterMm": 3.5
+  },
+  {
+    "id": "cbl.os2-mpo-trunk",
+    "name": "OS2 MPO trunk",
+    "media": "OS2",
+    "mediaClass": "fiber",
+    "endA": "MPO-12",
+    "endB": "MPO-12",
+    "color": "#facc15",
+    "bendRadiusMm": 40,
+    "diameterMm": 3.5
+  },
+  {
+    "id": "cbl.mpo-breakout",
+    "name": "MPO breakout",
+    "media": "OM4",
+    "mediaClass": "fiber",
+    "endA": "MPO-12",
+    "endB": "LC",
+    "color": "#2dd4bf",
+    "bendRadiusMm": 40,
+    "diameterMm": 3.5,
+    "breakout": {
+      "fanout": 4
+    }
+  },
+  {
+    "id": "cbl.dac-25g",
+    "name": "DAC 25G",
+    "media": "DAC",
+    "mediaClass": "copper",
+    "endA": "integrated",
+    "endB": "integrated",
+    "color": "#1f2937",
+    "bendRadiusMm": 50,
+    "diameterMm": 5,
+    "integrated": {
+      "formFactor": "SFP28",
+      "speedGbps": 25,
+      "reachM": 5
+    }
+  },
+  {
+    "id": "cbl.dac-100g",
+    "name": "DAC 100G",
+    "media": "DAC",
+    "mediaClass": "copper",
+    "endA": "integrated",
+    "endB": "integrated",
+    "color": "#1f2937",
+    "bendRadiusMm": 60,
+    "diameterMm": 7,
+    "integrated": {
+      "formFactor": "QSFP28",
+      "speedGbps": 100,
+      "reachM": 3
+    }
+  },
+  {
+    "id": "cbl.dac-400g",
+    "name": "DAC 400G",
+    "media": "DAC",
+    "mediaClass": "copper",
+    "endA": "integrated",
+    "endB": "integrated",
+    "color": "#1f2937",
+    "bendRadiusMm": 70,
+    "diameterMm": 8,
+    "integrated": {
+      "formFactor": "QSFP-DD",
+      "speedGbps": 400,
+      "reachM": 2.5
+    }
+  },
+  {
+    "id": "cbl.aoc-100g",
+    "name": "AOC 100G",
+    "media": "AOC",
+    "mediaClass": "fiber",
+    "endA": "integrated",
+    "endB": "integrated",
+    "color": "#fb923c",
+    "bendRadiusMm": 30,
+    "diameterMm": 3,
+    "integrated": {
+      "formFactor": "QSFP28",
+      "speedGbps": 100,
+      "reachM": 30
+    }
+  },
+  {
+    "id": "cbl.aoc-400g",
+    "name": "AOC 400G",
+    "media": "AOC",
+    "mediaClass": "fiber",
+    "endA": "integrated",
+    "endB": "integrated",
+    "color": "#fb923c",
+    "bendRadiusMm": 30,
+    "diameterMm": 3.5,
+    "integrated": {
+      "formFactor": "QSFP-DD",
+      "speedGbps": 400,
+      "reachM": 30
+    }
+  },
+  {
+    "id": "cbl.cat6a",
+    "name": "Cat6A patch",
+    "media": "Cat6A",
+    "mediaClass": "copper",
+    "endA": "RJ45",
+    "endB": "RJ45",
+    "color": "#3b82f6",
+    "bendRadiusMm": 25,
+    "diameterMm": 6
+  }
+]

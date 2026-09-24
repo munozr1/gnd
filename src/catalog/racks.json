@@ -1,0 +1,23 @@
+[
+  {
+    "id": "rack.standard-42u",
+    "name": "Standard rack 42U",
+    "heightU": 42,
+    "widthMm": 600,
+    "depthMm": 1070
+  },
+  {
+    "id": "rack.tall-48u",
+    "name": "Tall rack 48U",
+    "heightU": 48,
+    "widthMm": 600,
+    "depthMm": 1070
+  },
+  {
+    "id": "rack.network-42u",
+    "name": "Network rack 42U (800 wide)",
+    "heightU": 42,
+    "widthMm": 800,
+    "depthMm": 1070
+  }
+]
