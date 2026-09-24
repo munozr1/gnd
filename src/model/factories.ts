@@ -115,6 +115,7 @@ export function createRack(def: RackDef, opts: { name: string; pos: Vec2; row?: 
     widthMm: def.widthMm,
     depthMm: def.depthMm,
     ...(opts.row !== undefined ? { row: opts.row } : {}),
+    ...(def.kind && def.kind !== 'rack' ? { kind: def.kind } : {}),
   };
 }
 

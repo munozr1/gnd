@@ -148,12 +148,17 @@ export interface TrayDef {
   accepts: ('fiber' | 'copper')[];
 }
 
+/** A 'patch-frame' is a free-standing frame that holds patch panels (its own rack, placed anywhere on the floor). */
+export type RackKind = 'rack' | 'patch-frame';
+
 export interface RackDef {
   id: string;
   name: string;
   heightU: number;
   widthMm: number;
   depthMm: number;
+  /** undefined = 'rack'. */
+  kind?: RackKind;
 }
 
 export interface AccessoryDef {
@@ -244,6 +249,14 @@ export interface Rack {
   depthMm: number;
   /** Row label for place-by-rule ('A', 'B'). */
   row?: string;
+  /** undefined = 'rack'. Readers use `rack.kind ?? 'rack'`; writers never store the default. */
+  kind?: RackKind;
+  /**
+   * Optional docking of a patch frame to a device rack: the frame then keeps
+   * its position relative to that rack when the rack moves. Free-standing
+   * frames (the default) simply have no `attachedTo`.
+   */
+  attachedTo?: { rackId: Id; side: Side };
 }
 
 /** A component placed in a rack. */

@@ -37,7 +37,7 @@ import type {
 import { command, type Command } from '@/store/commands';
 import { asArray, dragKey, plural, resultCommand, snapshot, type ResultCommand } from './base';
 import { planPlaceByRule, type PlaceByRulePlan, type PlaceRule, type PlannedPlacement } from './placeByRule';
-import { nextRackName, placeDevice, redressRoutesOf, unplaceDevice, type PlacementTarget } from './placement';
+import { defaultFrameDefId, frameNameFor, nextFreeFloorPos, nextRackName, placeDevice, redressRoutesOf, unplaceDevice, type PlacementTarget } from './placement';
 
 const EDITOR = 'layout';
 
@@ -76,6 +76,38 @@ function pushRack(draft: Project, def: RackDef, pos: Vec2, opts: AddRackOptions)
 /** Place a rack from a catalog def; `result` is the rack id. */
 export function addRack(def: RackDef, pos: Vec2, opts: AddRackOptions = {}): ResultCommand<Id> {
   return resultCommand(`Add rack ${opts.name?.trim() || def.name}`, EDITOR, (d) => pushRack(d, def, pos, opts).id);
+}
+
+export interface NewFrameOptions {
+  /** Frame def; default: the smallest patch frame that fits the device. */
+  defId?: string;
+  name?: string;
+  rotationDeg?: Rotation;
+  face?: Face;
+}
+
+/**
+ * Make a device its own rack: create a free-standing patch frame at `pos`
+ * (or the next free floor spot) and place the device at U1. This is how a
+ * patch panel is placed directly on the floor plan without choosing a rack.
+ * `result` is the new frame's rack id.
+ */
+export function placeInNewFrame(componentId: Id, pos?: Vec2, opts: NewFrameOptions = {}): ResultCommand<Id> {
+  return resultCommand('Place as own frame', EDITOR, (d) => {
+    const c = d.components.find((x) => x.id === componentId);
+    if (!c) throw new Error(`Component ${componentId} does not exist`);
+    const defId = opts.defId ?? defaultFrameDefId(d, c);
+    const def = catalogIndex(d).catalog.racks.find((r) => r.id === defId);
+    if (!def) throw new Error(`Unknown rack def ${defId}`);
+    const at = pos ?? nextFreeFloorPos(d, def);
+    const rack = pushRack(d, def, at, {
+      name: opts.name ?? frameNameFor(d, c.ref),
+      ...(opts.rotationDeg !== undefined ? { rotationDeg: opts.rotationDeg } : {}),
+    });
+    placeDevice(d, { componentId, rackId: rack.id, uPosition: 1, ...(opts.face !== undefined ? { face: opts.face } : {}) });
+    redressRoutesOf(d, componentId);
+    return rack.id;
+  });
 }
 
 export interface RackArrayOptions {

@@ -1,3 +1,4 @@
+import { isPatchFrame } from '@/commands/placement';
 import { boundsOf } from '@/model/geometry';
 import { indexProject } from '@/model/query';
 import { portWorldPos, rackCenter, rackFloorRect, rackLocalToFloor, rackTopMm, routePath3d, U_MM } from '@/model/routing';
@@ -20,9 +21,11 @@ export function buildPhysicalScene(project: Project) {
       const p = rackLocalToFloor(rack, { across, depth });
       return { target, position: [p.x / 1000, y / 1000, p.y / 1000], size: [width / 1000, height / 1000, length / 1000], rotation, color };
     };
-    for (const x of [20, rack.widthMm - 20]) for (const z of [20, rack.depthMm - 20]) frames.push(part(x, top / 2, z, 35, top, 35));
-    for (const y of [15, top - 15]) frames.push(part(rack.widthMm / 2, y, rack.depthMm / 2, rack.widthMm, 30, rack.depthMm, '#344a5c'));
-    doors.push(part(rack.widthMm / 2, top / 2, rack.depthMm + 4, rack.widthMm - 30, top - 70, 8, '#6d8f9e'));
+    // A patch frame is an open frame: warm posts and bars, and no door to hide the panels.
+    const frame = isPatchFrame(rack);
+    for (const x of [20, rack.widthMm - 20]) for (const z of [20, rack.depthMm - 20]) frames.push(part(x, top / 2, z, 35, top, 35, frame ? '#8a7440' : '#52687b'));
+    for (const y of [15, top - 15]) frames.push(part(rack.widthMm / 2, y, rack.depthMm / 2, rack.widthMm, 30, rack.depthMm, frame ? '#5c4d2c' : '#344a5c'));
+    if (!frame) doors.push(part(rack.widthMm / 2, top / 2, rack.depthMm + 4, rack.widthMm - 30, top - 70, 8, '#6d8f9e'));
     const center = rackCenter(rack);
     labels.push({ id: rack.id, text: rack.name, position: [center.x / 1000, top / 1000 + 0.14, center.y / 1000] });
     for (const acc of project.accessories.filter((a) => a.rackId === rack.id)) {

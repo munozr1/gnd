@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { produce } from 'immer';
-import { layout } from '@/commands';
+import { isPatchFrame, layout } from '@/commands';
 import { boundsOf, pointInPolygon, snapVec } from '@/model/geometry';
 import { indexProject } from '@/model/query';
 import { onRackMoved, portFloorPos, rackCenter, rackFloorRect, rackFrontDir, trayFill } from '@/model/routing';
@@ -10,10 +10,16 @@ import { registerShortcut } from '@/store/shortcuts';
 import { run } from '@/panels/layout/shared';
 import { useStatusBarFields } from '@/panels/shell/StatusBarContext';
 import { Button } from '@/ui/Button';
+import { toast } from '@/ui/Toast';
+import { COMPONENT_MIME } from './elevation/constants';
+import { firstFreeSlot } from './elevation/geometry';
 import { caption, floorBounds, floorLinks, physicalSelectionBounds, selectedRackIds, stroke } from './physicalScene';
 import { PhysicalCanvas } from './PhysicalCanvas';
 import { segmentEntry, SegmentIndex } from './spatial';
 import { constrainPoint, trayAlongPolyline } from './constraints';
+
+/** Patch frames are drawn warmer than device racks so a free-standing frame reads at a glance. */
+const FRAME = { fill: '#3a3424', fillSelected: '#4d4322', stroke: '#c9a24b', strokeSelected: '#ffd166', text: '#f1dfae', subtext: '#d8b86a' };
 
 export function FloorView() {
   const project = useProject(), ui = useLayoutUi(), selection = useSelection();
@@ -21,6 +27,8 @@ export function FloorView() {
   const [cursor, setCursor] = useState<Vec2>({ x: 0, y: 0 });
   const [points, setPoints] = useState<Vec2[]>([]);
   const [preview, setPreview] = useState<{ ids: string[]; delta: Vec2 } | null>(null);
+  /** Floor point under an Unplaced-bin drag, while one is over the canvas. */
+  const [dragPoint, setDragPoint] = useState<Vec2 | null>(null);
   const drag = useRef<{ ids: string[]; start: Vec2 } | null>(null);
   const scale = useRef(0.1);
   const [fit, setFit] = useState(0);
@@ -45,9 +53,9 @@ export function FloorView() {
     return !r || (ui.view === 'split' && r.kind === 'items' && r.items.some((i) => i.kind === 'component')) ? null : r.kind === 'fit' ? bounds : r.kind === 'rect' ? r.rect : physicalSelectionBounds(project, r.items);
   }, [ui.viewportRequest, ui.view, project, bounds]);
   const handled = useCallback(() => store.getState().requestViewport('layout', null), []);
-  const cancel = useCallback(() => { drag.current = null; setPreview(null); setPoints([]); store.getState().patchLayout({ tool: 'select', placing: null, routingLinkId: null }); }, []);
-  useEffect(() => { setPoints([]); setPreview(null); drag.current = null; }, [project.id, ui.tool, ui.placing]);
-  useStatusBarFields({ mode: `Layout · ${ui.tool}`, coords: `x ${Math.round(cursor.x)}  y ${Math.round(cursor.y)} mm`, message: ui.tool === 'select' ? 'Drag racks · Double-click a rack for elevation · X route · Scroll to zoom' : 'Click points · Enter finishes · Esc cancels' });
+  const cancel = useCallback(() => { drag.current = null; setPreview(null); setPoints([]); setDragPoint(null); store.getState().patchLayout({ tool: 'select', placing: null, routingLinkId: null }); }, []);
+  useEffect(() => { setPoints([]); setPreview(null); setDragPoint(null); drag.current = null; }, [project.id, ui.tool, ui.placing]);
+  useStatusBarFields({ mode: `Layout · ${ui.tool}`, coords: `x ${Math.round(cursor.x)}  y ${Math.round(cursor.y)} mm`, message: ui.tool === 'select' ? 'Drag racks · Double-click a rack for elevation · X route · Scroll to zoom · Drop devices on the floor' : 'Click points · Enter finishes · Esc cancels' });
   const finish = () => {
     if (ui.tool === 'route' && ui.routingLinkId && points.length) {
       const link = idx.link(ui.routingLinkId), end = link && portFloorPos(project, link.b.componentId, link.b.portId);
@@ -89,6 +97,24 @@ export function FloorView() {
   const rackAt = (p: Vec2) => [...data.racks].reverse().find((r) => { const b = rackFloorRect(r); return p.x >= b.x && p.x <= b.x + b.width && p.y >= b.y && p.y <= b.y + b.height; });
   const snapped = (p: Vec2) => snapVec(p, ui.snapMm || 1);
   const drawingPoint = points.length && (ui.tool === 'tray' || ui.tool === 'route') ? constrainPoint(points.at(-1)!, snapped(cursor), 'ortho') : snapped(cursor);
+  // Drop ghost: over a rack the device goes into that rack; over empty floor it gets its own patch frame (smallest catalog frame as the outline).
+  const frameDef = idx.catalog.catalog.racks.filter((r) => r.kind === 'patch-frame').sort((a, b) => a.heightU - b.heightU)[0];
+  const frameSize = { widthMm: frameDef?.widthMm ?? 600, depthMm: frameDef?.depthMm ?? 300 };
+  const dropRack = dragPoint ? rackAt(dragPoint) : undefined;
+  const dropGhost = dragPoint && !dropRack ? snapVec(dragPoint, project.room.gridMm) : null;
+  const dropComponent = (p: Vec2, id: string) => {
+    const c = idx.component(id);
+    if (!c) return;
+    const rack = rackAt(p);
+    if (rack) {
+      const u = firstFreeSlot(project, rack.id, idx.heightUOf(c));
+      if (u === null) { toast(`No free U range in ${rack.name}.`, { tone: 'warning' }); return; }
+      if (run(layout.placeComponent(id, rack.id, u))) { store.getState().select({ kind: 'component', id }); toast.ok(`${c.ref} placed in ${rack.name} at U${u}`); }
+      return;
+    }
+    const cmd = layout.placeInNewFrame(id, snapVec(p, project.room.gridMm));
+    if (run(cmd) && cmd.result) { store.getState().select({ kind: 'rack', id: cmd.result }); toast.ok(`${c.ref} placed as its own frame`); }
+  };
   return <div className="relative h-full min-h-0" data-rack-count={project.racks.length} data-route-count={links.filter((l) => l.routed).length} data-airwire-count={links.filter((l) => !l.routed).length}>
     <PhysicalCanvas testId="floor-canvas" label="Floor plan" bounds={bounds} resetKey={`${project.id}:${fit}`} frame={frame} onFrame={handled} onCancel={cancel}
       onDown={(p, e) => {
@@ -106,6 +132,9 @@ export function FloorView() {
       onMove={(p) => { setCursor(p); const g = drag.current; if (g) setPreview({ ids: g.ids, delta: snapVec({ x: p.x - g.start.x, y: p.y - g.start.y }, ui.snapMm || 1) }); }}
       onUp={() => { if (preview && (preview.delta.x || preview.delta.y)) run(layout.moveRacks(preview.ids, preview.delta, crypto.randomUUID())); drag.current = null; setPreview(null); }}
       onDoubleClick={(p) => { const rack = rackAt(p); if (rack) { store.getState().setElevationRacks([rack.id]); store.getState().setLayoutView('elevation'); } else { const hit = hitIndex.nearest(p, 8 / scale.current); if (hit?.ref.kind === 'link') startRoute(hit.ref.id); } }}
+      onDragMove={(p, dt) => { if (dt.types.includes(COMPONENT_MIME)) setDragPoint(p); }}
+      onDragLeave={() => setDragPoint(null)}
+      onDrop={(p, dt) => { setDragPoint(null); const id = dt.getData(COMPONENT_MIME); if (id) dropComponent(p, id); }}
       paint={(ctx, zoom) => {
         scale.current = zoom;
         const room = data.room.outline;
@@ -119,14 +148,22 @@ export function FloorView() {
         ctx.restore();
         for (const k of data.keepouts) { stroke(ctx, k.outline, '#dd9a58', 1 / zoom, true); ctx.fillStyle = '#b9742828'; ctx.fill(); const r = boundsOf(k.outline); caption(ctx, k.name, { x: r.x + r.width / 2, y: r.y + r.height / 2 }, 10 / zoom, '#ddb079'); }
         for (const r of data.racks) {
-          const b = rackFloorRect(r), selected = selectedRacks.includes(r.id), center = rackCenter(r), front = rackFrontDir(r);
-          ctx.fillStyle = selected ? '#204467' : '#25394c'; ctx.fillRect(b.x, b.y, b.width, b.height);
-          ctx.strokeStyle = selected ? '#69bfff' : '#6f8aa2'; ctx.lineWidth = (selected ? 2 : 1) / zoom; ctx.strokeRect(b.x, b.y, b.width, b.height);
-          caption(ctx, r.name, { x: center.x, y: center.y - 80 }, 12 / zoom);
-          caption(ctx, `${idx.componentsInRack(r.id).length} devices`, { x: center.x, y: center.y + 110 }, 9 / zoom, '#9bb3c8');
+          const b = rackFloorRect(r), selected = selectedRacks.includes(r.id), center = rackCenter(r), front = rackFrontDir(r), count = idx.componentsInRack(r.id).length;
+          if (isPatchFrame(r)) {
+            ctx.fillStyle = selected ? FRAME.fillSelected : FRAME.fill; ctx.fillRect(b.x, b.y, b.width, b.height);
+            ctx.setLineDash([8 / zoom, 5 / zoom]); ctx.strokeStyle = selected ? FRAME.strokeSelected : FRAME.stroke; ctx.lineWidth = (selected ? 2 : 1) / zoom; ctx.strokeRect(b.x, b.y, b.width, b.height); ctx.setLineDash([]);
+            caption(ctx, r.name, { x: center.x, y: center.y - b.height * 0.22 }, 12 / zoom, FRAME.text);
+            caption(ctx, `patch frame · ${count} panel${count === 1 ? '' : 's'}`, { x: center.x, y: center.y + b.height * 0.3 }, 9 / zoom, FRAME.subtext);
+          } else {
+            ctx.fillStyle = selected ? '#204467' : '#25394c'; ctx.fillRect(b.x, b.y, b.width, b.height);
+            ctx.strokeStyle = selected ? '#69bfff' : '#6f8aa2'; ctx.lineWidth = (selected ? 2 : 1) / zoom; ctx.strokeRect(b.x, b.y, b.width, b.height);
+            caption(ctx, r.name, { x: center.x, y: center.y - 80 }, 12 / zoom);
+            caption(ctx, `${count} devices`, { x: center.x, y: center.y + 110 }, 9 / zoom, '#9bb3c8');
+          }
           const tip = { x: center.x + front.x * r.depthMm * 0.42, y: center.y + front.y * r.depthMm * 0.42 };
           stroke(ctx, [center, tip], '#7edac4', 2 / zoom);
           caption(ctx, 'F', tip, 9 / zoom, '#7edac4');
+          if (dropRack?.id === r.id) { ctx.strokeStyle = '#7edac4'; ctx.lineWidth = 3 / zoom; ctx.strokeRect(b.x, b.y, b.width, b.height); }
         }
         for (const t of data.trays) {
           if (!ui.visibleLayers[t.layer]) continue;
@@ -143,10 +180,16 @@ export function FloorView() {
         ctx.setLineDash([]); ctx.globalAlpha = 1;
         if (points.length) stroke(ctx, [...points, drawingPoint], '#76c6ff', 2 / zoom, ui.tool === 'keepout' || ui.tool === 'room');
         if (ui.placing?.kind === 'rack') { const def = idx.catalog.racks.get(ui.placing.defId), p = snapVec(cursor, project.room.gridMm); if (def) { ctx.fillStyle = '#78c8ff44'; ctx.fillRect(p.x, p.y, def.widthMm, def.depthMm); } }
+        if (dropGhost) {
+          ctx.setLineDash([8 / zoom, 5 / zoom]); ctx.fillStyle = `${FRAME.stroke}33`; ctx.fillRect(dropGhost.x, dropGhost.y, frameSize.widthMm, frameSize.depthMm);
+          ctx.strokeStyle = FRAME.stroke; ctx.lineWidth = 1.5 / zoom; ctx.strokeRect(dropGhost.x, dropGhost.y, frameSize.widthMm, frameSize.depthMm); ctx.setLineDash([]);
+          caption(ctx, 'new frame', { x: dropGhost.x + frameSize.widthMm / 2, y: dropGhost.y + frameSize.depthMm / 2 }, 9 / zoom, FRAME.stroke);
+        }
       }}>
       <div className="absolute bottom-2 left-2 rounded border border-border bg-panel/90 px-2 py-1 text-xs text-fg-muted">{project.racks.length} racks · {project.placements.filter((p) => p.rackId).length} placed devices · {links.filter((l) => l.routed).length} routed cables</div>
       <div className="absolute right-2 top-2 flex gap-1"><Button onClick={() => setFit((v) => v + 1)}>Fit floor</Button>{points.length > 0 && <Button onClick={finish}>Finish</Button>}</div>
-      {!project.racks.length && <p className="pointer-events-none absolute inset-x-0 top-1/2 text-center text-fg-muted">Add racks from the Library, then place devices in Elevation.</p>}
+      {dragPoint && <div className="pointer-events-none absolute bottom-2 right-2 rounded border border-border bg-panel/90 px-2 py-1 text-xs" data-testid="floor-drop-hint">{dropRack ? `Drop into ${dropRack.name} at the first free U` : 'Drop here to place as its own patch frame'}</div>}
+      {!project.racks.length && <p className="pointer-events-none absolute inset-x-0 top-1/2 px-8 text-center text-fg-muted">Add racks from the Library, then place devices in Elevation — or drag a device from the Unplaced bin onto the floor to give it its own frame.</p>}
     </PhysicalCanvas>
   </div>;
 }

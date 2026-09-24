@@ -42,7 +42,7 @@ The worked example throughout is the diagram in the request: bricks **B1–B4**,
 | **Pinout** | The cable's fixed fiber-to-fiber wiring between its A legs and B legs (e.g. MPO Method B flips position `i ↔ 13 − i`). |
 | **Cassette** | A passive module with MPO port(s) on the rear and LC ports on the front and a fixed **fiber map** between them. Breakout and aggregation are the same cassette read in opposite directions. |
 | **Patch panel** | A `Component` (kind `patch-panel`) whose footprint contains cassettes; its `fiberMap` is the union of its cassettes' maps. |
-| **Patch frame** | A `Rack` with `kind: 'patch-frame'` attached to the side of a device rack; patch panels are placed in it like any device. This is what "the panel shows next to its rack" means in layout and 3D. Full 19" width (600 mm), shallow (300 mm). |
+| **Patch frame** | A **free-standing** `Rack` with `kind: 'patch-frame'`: a patch panel's own rack, placed anywhere on the floor like any rack (drag a panel from the Unplaced bin onto the floor, or press "Own frame"); patch panels are placed in it like any device. Full 19" width (600 mm), shallow (300 mm); 12U by default, 42U "patch rack" available. A frame may *optionally* be docked to a device rack (`attachedTo`), in which case it keeps its position relative to that rack when the rack moves — this is only a convenience the generator uses to put a brick's panel beside the brick's rack; nothing requires a parent rack. **Implemented ahead of this spec on the feature branch** (`placeInNewFrame`, floor drop, "Own frame"). |
 | **Terminal / transit** | A port is a **terminal** iff its component's footprint `kind !== 'patch-panel'` and the port has a fiber layout. Ports on `patch-panel` footprints are **transit**: a walk passes through the footprint's `fiberMap`. |
 | **Trace** | Walking one fiber (or one lane = two fibers) from a device terminal through every cable and cassette until it reaches another terminal or dies. |
 | **Plan link** | An existing `Link` between two device lanes. A **plant link** is a plan link with `cableDefId === null` whose ends have fiber layouts (§6.3); the plant must realise it. |
@@ -207,9 +207,9 @@ export interface FiberCable {
 }
 
 // Component gains: generatedBy?: Id      (panels made by the generator; `value` stays the human role, e.g. 'patch-panel')
-// Rack gains:
+// Rack gains (kind + attachedTo already on the branch):
 //   kind?: 'rack' | 'patch-frame';        // undefined means 'rack' — readers use `rack.kind ?? 'rack'`, writers never store the default
-//   attachedTo?: { rackId: Id; side: Side };   // patch frames only; positioned by attachFramePosition and moved with the parent
+//   attachedTo?: { rackId: Id; side: Side };   // OPTIONAL docking of a frame to a device rack; absent = free-standing (the default)
 //   generatedBy?: Id;
 // Project gains: fiberCables: FiberCable[]
 // Route gains: owner?: 'link' | 'cable'   // default 'link'; when 'cable', Route.linkId holds the FiberCable id (F6, §9.3)
@@ -226,7 +226,7 @@ export interface FiberCable {
 - A leg's `connector` must equal the port's connector: fixed `LC`/`MPO-12` ports by `type`; cage ports by the assigned optic's layout connector. `plugLeg` throws otherwise. Removing an optic from a plugged cage is allowed; the port then traces as `no-optic` and `fiber-connector-mismatch` fires.
 - `pinout` positions are unique per side and ≤ the leg connector's size; `fiberCount === pinout.length`; `FiberLayoutDef.tx/rx` are disjoint and within the connector size. `validateFiberCatalog(catalog): string[]` checks all of this and is asserted empty for `builtinCatalog`.
 - Panel `fiberMap` entries reference existing ports and are unique per `(portId, pos)`.
-- Patch frames always have `attachedTo`; they are created only by `addPatchFrame(parentId, side)`, positioned by `attachFramePosition`, and follow their parent through `moveRacks` / `rotateRack` / `renameRack`. Deleting the parent deletes its frames, unplaces the panels in them **and unplugs every cable leg on those panels' ports** (`onRackDeletedFrames`).
+- Patch frames are ordinary free-standing racks (`kind: 'patch-frame'`): created by `placeInNewFrame(componentId, pos?)` (a device becomes its own rack, placed at U1), by placing a patch-frame def from the Library, or by the generator; moved, rotated, renamed and deleted like any rack (deleting one unplaces its panels). A frame **may** be docked with `attachedTo` (`dockFrame(frameId, parentId, side)` / `undockFrame`); a docked frame is positioned by `attachFramePosition` and follows its parent through `moveRacks` / `rotateRack` / `renameRack`; deleting the parent deletes its docked frames, unplaces the panels in them **and unplugs every cable leg on those panels' ports** (`onRackDeletedFrames`). Dragging a docked frame on the floor undocks it.
 
 **Plan ↔ plant relation:** a plan link is a **plant link** iff `link.cableDefId === null` and each end's port has a fiber layout. It is *realised* when `traceLane` from end A returns `status: 'ok'` with `far` equal to end B (`isRealisedByPlant(project, linkId)`, memoised on the `FiberIndex`). Plant links keep `cableDefId: null` (the physical path is several cables); ERC `connector-mismatch` / `media-mismatch` already skip links without a cable; the fiber rules in §6.4 take over. Links with a direct `cableDefId` are point-to-point cables and are **never traced** — this keeps every existing project's ERC/DRC output unchanged.
 
@@ -240,7 +240,7 @@ New files: `fiberLayouts.json`, `fiberCables.json`, `cassettes.json`, `chassis.j
 - Cables: the rows in §3.2 (OM4 aqua `#2dd4bf`, OS2 yellow `#facc15`; jumpers `diameterMm 2`, 8F/12F trunks `3.5`, 144F `12`). `lengthsM` = `[1,2,3,5,7,10,15,20,30]` for jumpers, `[5,10,15,20,30,50,75,100]` for trunks. `fcbl.lc-duplex-straight` has `hidden: true`.
 - Cassettes: the five MPO-12 entries in §3.3 (the MPO-16 one ships with F8).
 - Chassis: `chs.1u-4` (1U, 4 slots, 300 mm), `chs.2u-8` (2U, 8 slots), `chs.4u-12` (4U, 12 slots).
-- Patch frames (`racks.json`): `rack.patch-frame-42u` — 42U, 600 wide, 300 deep, `kind: 'patch-frame'`. `createRack` copies `def.kind`. The layout Library's rack list **hides** `kind === 'patch-frame'` defs (frames are only added through `addPatchFrame`).
+- Patch frames (`racks.json`, already shipped): `rack.patch-frame-12u` (12U, 600 × 300, the default for "Own frame" / floor drop) and `rack.patch-frame-42u` (42U patch rack), both `kind: 'patch-frame'`. `createRack` copies `def.kind`. They are listed in the layout Library like any rack (with a "frame" badge) and can be placed freely.
 - Generated panel footprints are **not** shipped; the panel builder (§7.4) produces them into `project.customCatalog.footprints` with ids `fp.panel.<hash>`.
 - The two existing static panels gain a `fiberMap` so they trace: `fp.fiber-patch-panel-24lc`: `f<i>:1 ↔ r<i>:2`, `f<i>:2 ↔ r<i>:1` for `i ∈ 1..24` (a duplex adapter is a 1↔2 crossover, §1); `fp.mpo-patch-panel-12`: `f<i>:p ↔ r<i>:p` for `i ∈ 1..12`, `p ∈ 1..12` (key-up/key-down adapters).
 - Transceivers: add `fiberLayoutId` per §3.1 and set `100G-LR4.lanes = 1`.
@@ -375,8 +375,8 @@ export interface FiberFabricSpec {
     jumperDefId: string; chassisDefId: string;
   };
   panels: {
-    brick: { mode: 'patch-frame' | 'in-rack'; rackIdByBrick?: Record<string, Id>; frameSide?: Side };
-    spine: { mode: 'patch-frame' | 'in-rack' | 'shared-frame'; rackIdBySpine?: Record<string, Id>; frameSide?: Side };
+    brick: { mode: 'patch-frame' | 'in-rack'; rackIdByBrick?: Record<string, Id>; frameSide?: Side; dock?: boolean };
+    spine: { mode: 'patch-frame' | 'in-rack' | 'shared-frame'; rackIdBySpine?: Record<string, Id>; frameSide?: Side; dock?: boolean };
   };
   labels?: { brickTrunk?: string; spineTrunk?: string; jumper?: string; brickPanel?: string; spinePanel?: string; frame?: string };
   createPlanLinks: boolean;                                          // also create the lane-to-lane Links (default true)
@@ -385,14 +385,14 @@ export interface FiberFabricSpec {
 
 export interface GeneratorError {
   code: 'brick-port-not-parallel' | 'brick-lane-count' | 'spine-ports-exhausted' | 'spine-lane-count' | 'port-plugged' | 'port-linked'
-      | 'unknown-def' | 'part-mismatch' | 'no-rack' | 'ref-collision';
+      | 'unknown-def' | 'part-mismatch' | 'no-rack' | 'ref-collision';   // 'no-rack' only for mode 'in-rack' with no resolvable rack
   message: string; brick?: string; spine?: string; componentId?: Id; portId?: string;
 }
 ```
 
 Any `GeneratorError` makes `planFiberFabric` return empty `frames/panels/cables/links` with `errors` populated (like `planBreakout`).
 
-**Rack resolution** (for `patch-frame` / `in-rack`): `rackIdByBrick[name]` / `rackIdBySpine[name]`, else the rack of the brick's (spine's) first *placed* device, else `GeneratorError { code: 'no-rack' }`. `'shared-frame'` requires `rackIdBySpine['*']` (one frame for all spine panels). Panels in a frame or rack are placed bottom-up from the first free U (`firstFreeSlot` semantics of `placeDevice`), face `'front'`; a second chassis for the same brick stacks directly above the first.
+**Rack resolution.** For `mode: 'patch-frame'` (the default) the panel gets its own free-standing frame (`rack.patch-frame-42u` when the brick needs more than 12U of panels, else `-12u`): positioned beside the reference rack — `rackIdByBrick[name]` / `rackIdBySpine[name]`, else the rack of the brick's (spine's) first *placed* device — on `frameSide` (default right) via `attachFramePosition`, and docked to it only when `dock: true`; when no reference rack exists the frame goes to `nextFreeFloorPos` and generation still succeeds. For `mode: 'in-rack'` the same resolution must yield a rack, else `GeneratorError { code: 'no-rack' }`. `'shared-frame'` puts every spine panel in one frame placed beside `rackIdBySpine['*']` or at `nextFreeFloorPos`. Panels in a frame or rack are placed bottom-up from the first free U (`firstFreeSlot` semantics of `placeDevice`), face `'front'`; a second chassis for the same brick stacks directly above the first.
 
 **Helper pickers** for the UI (pure): `bricksFromSheets(project, sheetIds)`, `bricksFromRefGlob(project, glob)`, `parallelPortsOf(idx, component)` (ports whose optic/type layout has > 1 lane — a cage without an optic is not a parallel port), `spinesFromSelection(...)`.
 
@@ -442,7 +442,7 @@ where `verification` is computed by tracing a **scratch copy** of the project wi
 
 ### 8.1 Library (`src/panels/library`, `src/panels/layout/LibraryPanel.tsx`)
 - Schematic Library gains a **Fiber plant** category: chassis (opens the Panel builder), cassettes (info rows); the two static panels stay under Patch panels.
-- Layout Library gains **Fiber cables** (trunks / jumpers by def, `144F · 72 ch · 12 legs` summaries; `hidden` defs omitted) and **Patch frame** (adds a frame attached to the selected rack, side picker → `addPatchFrame`). The rack list hides `patch-frame` defs.
+- Layout Library gains **Fiber cables** (trunks / jumpers by def, `144F · 72 ch · 12 legs` summaries; `hidden` defs omitted). Patch frames are already in the rack list (badge "frame") and place freely; the Unplaced bin already offers **Own frame** per device and accepts a drop **on the floor plan** (→ `placeInNewFrame`). A frame's inspector gains an optional "Dock to rack" (rack + side → `dockFrame`) / "Undock".
 
 ### 8.2 Dialogs (`registerDialog`)
 - `panel-builder`: chassis Select, one cassette Select per slot, name, preview of the generated port list and fiber map table → `addPanelFootprint`, then places the component like any library symbol (`ui.schematic.placing`).
@@ -470,7 +470,7 @@ Registered **twice** with one component: `fiber-plant.schematic` (editor `schema
 - Status bar (layout): `Fiber: 160 ch · 0 faults` next to `Unrouted`.
 
 ### 8.6 Layout & elevation (`src/editors/layout/**`)
-- Patch frames render beside their parent rack (`attachFramePosition`, §9.1), dashed outline, label `PF-<rack>`. The floor view **selects but never drags** a frame; the rack drag preview applies `attachFramePosition` to attached frames so they follow live. Rotating the parent rotates the frame.
+- Patch frames render with a dashed outline and the caption `<name> · patch frame · N panels` (already implemented). Free-standing frames drag, rotate and delete like racks. A **docked** frame follows its parent: the rack drag preview applies `attachFramePosition` to docked frames so they follow live, rotating the parent rotates the frame, and dragging the frame itself undocks it.
 - Elevation shows a frame as a full-width (600 mm) column with a dashed outline and no roof/plinth ("slim" refers to its 300 mm depth); panels are placed in it via the same drag/drop and `placeComponent`.
 - Trunks and jumpers in elevation: trunk = short thick line from the device port to the panel rear port (same/adjacent column); jumpers leave the panel front port as thin stubs with the far panel name (like external airwires). In the floor plan, jumpers between frames draw as thin airwires (cable colour) until routed (F6).
 
@@ -505,8 +505,9 @@ src/model/fiber/
   trace.ts          traceFiber / traceLane / lanesThrough / traceAll / isRealisedByPlant / formatPath
   generator.ts      planFiberFabric / applyFiberFabric / mapping rules / pickers
   panelBuilder.ts   buildPanelFootprint
-  mutations.ts      addFiberCable, plugLeg, unplugLeg, deleteFiberCable, setCableLength, addPatchFrame, attachFramePosition,
-                    onRackMovedFrames, onRackDeletedFrames, unplugComponent (used by deleteComponents / F8)
+  mutations.ts      addFiberCable, plugLeg, unplugLeg, deleteFiberCable, setCableLength, dockFrame, undockFrame, attachFramePosition,
+                    onRackMovedFrames, onRackDeletedFrames (docked frames only), unplugComponent (used by deleteComponents / F8)
+                    (placeInNewFrame / defaultFrameDefId / frameNameFor / nextFreeFloorPos already exist in src/commands)
 src/model/drc/rules/fiber-*.ts
 src/model/erc/rules/lane-out-of-range.ts
 src/commands/fiber.ts
@@ -516,7 +517,7 @@ src/io/exports/fiber*.ts
 src/model/demo/fiberFabric.ts   buildFiberFabricProject(opts) + fiberFabricSpecFor(project, opts) — the canonical fixture + 'Fiber fabric' template
 ```
 
-**`attachFramePosition(project, parent, side)`** (normative): the frame's footprint touches the parent's `side` edge, offset outward by the fitted vertical manager's width on that side when one exists (`managerFor(project, parent.id, side)`), front faces flush. At rotation 0: `left → { x: parent.pos.x − vcmW − frame.widthMm, y: parent.pos.y + parent.depthMm − frame.depthMm }`, `right → { x: parent.pos.x + parent.widthMm + vcmW, y: same }`; for other rotations rotate that offset about the parent's centre by `parent.rotationDeg` and copy `rotationDeg`. Recomputed by `onRackMovedFrames`, `rotateRack`, and `addAccessory` / `removeAccessory` for a vcm.
+**`attachFramePosition(project, parent, side)`** (normative; used when placing a frame beside a rack and, continuously, for docked frames): the frame's footprint touches the parent's `side` edge, offset outward by the fitted vertical manager's width on that side when one exists (`managerFor(project, parent.id, side)`), front faces flush. At rotation 0: `left → { x: parent.pos.x − vcmW − frame.widthMm, y: parent.pos.y + parent.depthMm − frame.depthMm }`, `right → { x: parent.pos.x + parent.widthMm + vcmW, y: same }`; for other rotations rotate that offset about the parent's centre by `parent.rotationDeg` and copy `rotationDeg`. Recomputed by `onRackMovedFrames`, `rotateRack`, and `addAccessory` / `removeAccessory` for a vcm.
 
 **The canonical fixture** (`buildFiberFabricProject(opts: { bricks?: number (4); devicesPerBrick?: number (10); generate?: boolean (true) })`) makes the request's example literal:
 - A custom device `sym.fiber-demo-device` / `fp.fiber-demo-device` (1U, kind `switch`, `refPrefix: 'DEV'`, ports `P1..P12` of type `QSFP28`) in `customCatalog`; **both** brick devices and spines use it with `xcvr.100g-sr4` assigned on every used port, so every lane is 25 G on both sides and ERC has no errors.
@@ -533,7 +534,7 @@ src/model/demo/fiberFabric.ts   buildFiberFabricProject(opts) + fiberFabricSpecF
 - [F1] `src/model/schematic/breakout.ts`: `breakoutFanout` precedence + `'source-not-parallel'` per §3.1.
 - [F1] `src/model/factories.ts` `createRack` copies `def.kind`; `createProject` fills `fiberCables: []`, `customCatalog.fiberCables/cassettes: []`, `settings.fiber`.
 - [F1] `src/store/selection.ts`: `selectionKey` → `fiber-lane:${componentId}:${portId}:${lane}`, `fiber-cable:${id}`; `selectionItemExists` → `fiber-cable` via `fiberCableById`, `fiber-lane` → component and port exist. `src/store/index.ts` `revealSelection` default editor: `fiber-cable` → layout, `fiber-lane` → schematic.
-- [F1] **Patch-frame ripple:** `commands.moveRacks` drops frame ids whose parent is in the set and refuses lone frame ids; `rotateRack` / `renameRack(parent → PF-<new>)` / `deleteRacks` (expand with `racks.filter(r => r.attachedTo && set.has(r.attachedTo.rackId))`, then `onRackDeletedFrames`) cascade; `onRackMovedFrames` calls `routing.onRackMoved` per frame; `matchRacks` (place-by-rule) excludes frames unless `filter.includeFrames`; `addRackArray` never creates frames; DRC `clearance` treats a frame overlapping its own parent's vcm strip as fine (they are positioned outside it).
+- [F1] **Docked-frame ripple** (free-standing frames need none of this — they are ordinary racks): `commands.moveRacks` also moves docked frames whose parent is in the set (and undocks a docked frame that is moved on its own); `rotateRack` / `renameRack(parent → PF-<new>)` / `deleteRacks` (expand with `racks.filter(r => r.attachedTo && set.has(r.attachedTo.rackId))`, then `onRackDeletedFrames`) cascade; `onRackMovedFrames` calls `routing.onRackMoved` per frame; `matchRacks` (place-by-rule) excludes frames unless `filter.includeFrames`; `addRackArray` never creates frames; DRC `clearance` treats a docked frame overlapping its own parent's vcm strip as fine (they are positioned outside it).
 - [F1] `src/commands/base.ts` and `src/io/exports/common.ts`: re-export `compareNatural` from `@/model/text` (one-line change each).
 - [F2] `src/model/drc/rules/unrouted-link.ts`, `reach-exceeded.ts`: skip plant links via `isPlantLink`.
 - [F4] `src/editors/layout/FloorView.tsx`: frames selectable, not draggable; drag preview moves attached frames. `src/editors/layout/physicalScene.ts` `floorLinks`, viewer3d airwires, elevation airwires: skip realised plant links via `isRealisedByPlant`. `src/editors/layout/elevation/*`: frame column styling. `src/editors/viewer3d/*`: §8.7; highlight/frame/name handle the two new selection kinds.
@@ -581,7 +582,7 @@ Model-level (Vitest, `src/model/fiber/*.test.ts`). Criteria 1–5 are first prov
 6. **Derived channels and catalog validity.** `channelsOf(fcbl.mpo12-8f-om4-b) === 4`, `channelsOf(fcbl.lc-duplex-om4) === 1`, `channelsOf(fcbl.mpo12-144f-os2-b) === 72`; `validateFiberCatalog(builtinCatalog)` is empty; a def with `fiberCount ≠ pinout.length` or a cassette breaking the §3.3 invariant is reported.
 7. **Generator scale.** `planFiberFabric(base10, spec10)` → `counts = { trunks: 80, jumpers: 160, panels: 8, cassettes: 80, links: 160 }`, `errors` empty, `verification.summary.ok === 160`, zero faults; every spine port aggregates exactly one channel from each brick (lane `b − 1` on spine `k` port `P<d>` traces back to brick `b` device `d`); labels follow §7.1 (`T-B2-7`, `J-B2-7-3`, `T-S3-7`); the worked check in §7.2 holds (`PP-B2:f27 ↔ PP-S3:f26`).
 8. **One undo step.** `store.execute(commands.applyFiberFabric(plan))` on `base10`: `canUndo('layout')` true, one `undo` removes all frames/panels/cables/links and custom defs; `computeSyncPlan` is empty right after apply; panel U ranges equal the chassis height (`chs.4u-12` → 4U).
-9. **Invariants.** `plugLeg` into an occupied port throws; connector mismatch throws; `deleteRacks(A02)` on `fixture1` removes `PF-A02`, unplaces `PP-B2` and unplugs `T-B2` leg B and the four jumpers' A legs — `traceLane(B2,'P1',2)` becomes `dead-end` / `leg-unplugged` with `cableId = T-B2`; `deleteComponents([PP-B2])` has the same tracing effect; `annotate({ scope: 'all' })` leaves `PP-B2` and `B2` untouched.
+9. **Invariants.** `plugLeg` into an occupied port throws; connector mismatch throws; on `fixture1` (frames generated with `dock: true`) `deleteRacks(A02)` removes the docked `PF-A02`, unplaces `PP-B2` and unplugs `T-B2` leg B and the four jumpers' A legs — `traceLane(B2,'P1',2)` becomes `dead-end` / `leg-unplugged` with `cableId = T-B2`; with `dock: false` the frame survives and only `A02`'s devices are unplaced; deleting a free-standing frame directly unplaces its panels and unplugs their ports; `deleteComponents([PP-B2])` has the same tracing effect; `annotate({ scope: 'all' })` leaves `PP-B2` and `B2` untouched.
 10. **Persistence.** JSON round trip preserves `fiberCables`, frames and custom panel footprints; a pre-feature JSON loads with `fiberCables: []` and default `settings.fiber`; a JSON with a partial `settings.fiber` gets the missing defaults.
 11. **Performance.** `traceAll` on the generated 4 × 10 project < 50 ms; `planFiberFabric(base10, spec10)` < 500 ms (node, generous bounds in the test).
 12. **Regression.** `runDrc(buildPodProject())` still yields exactly 60 `unrouted-link` warnings and no other rule; all existing breakout/annotate/routing tests pass.
@@ -606,6 +607,7 @@ UI-level (Playwright, `e2e/fiber.spec.ts`, using `File ▸ New from template ▸
 | Should the plan link be created automatically by the generator? | Yes (`createPlanLinks: true`); the plant is what proves it. |
 | Real vendor polarity variants (Method A trunks + A cassettes, Method C)? | Expressible via `pinout`/`map` data (§3.5); only Method B parts ship. |
 | Where do spine panels live — one frame per spine rack or a shared MDA frame? | Per spine rack by default; `'shared-frame'` supported by the spec input. |
+| Must a patch panel's frame be attached to a device rack? | **No.** Frames are free-standing racks; docking is optional (`dock: true` in the generator, "Dock to rack" in the inspector). Decided 2026-09-24 after the user hit the rack requirement. |
 | Extend `PortType` with `MPO-16` now? | No — F8 increment; F1–F5 keep `PortType` unchanged and use MPO-16 only as a cable-leg / layout connector on cage ports. |
 
 ---

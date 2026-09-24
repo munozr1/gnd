@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { layout } from '@/commands';
+import { isPatchFrame, layout } from '@/commands';
 import { indexProject } from '@/model/query';
 import type { Vec2 } from '@/model/types';
 import { store, useLayoutUi, useProject, useSelection } from '@/store';
@@ -63,9 +63,11 @@ export function ElevationView() {
       onDrop={(p, data) => { const id = data.getData(COMPONENT_MIME); const t = target(p, id); if (t) run(layout.placeComponent(id, t.rackId, t.u, ui.elevationFace)); }}
       paint={(ctx, zoom) => {
         for (const column of columns) {
-          const r = columnRect(column);
-          ctx.fillStyle = '#131e29'; ctx.fillRect(r.x, r.y, r.width, r.height); ctx.strokeStyle = '#688298'; ctx.lineWidth = 2 / zoom; ctx.strokeRect(r.x, r.y, r.width, r.height);
-          caption(ctx, column.rack.name, { x: r.x + r.width / 2, y: r.y - 90 }, 16 / zoom, '#85c9fa');
+          const r = columnRect(column), frame = isPatchFrame(column.rack);
+          // A patch frame is an open frame (no door/roof): dashed rails and a labelled header tell it apart from a device rack.
+          ctx.fillStyle = '#131e29'; ctx.fillRect(r.x, r.y, r.width, r.height); ctx.strokeStyle = '#688298'; ctx.lineWidth = 2 / zoom;
+          ctx.setLineDash(frame ? [14 / zoom, 8 / zoom] : []); ctx.strokeRect(r.x, r.y, r.width, r.height); ctx.setLineDash([]);
+          caption(ctx, frame ? `${column.rack.name} · patch frame` : column.rack.name, { x: r.x + r.width / 2, y: r.y - 90 }, 16 / zoom, '#85c9fa');
           for (let u = 1; u <= column.rack.heightU; u++) {
             stroke(ctx, [{ x: r.x, y: uBottomY(u) }, { x: r.x + r.width, y: uBottomY(u) }], '#293947', 0.5 / zoom);
             caption(ctx, String(u), { x: r.x + 25, y: (uTopY(u) + uBottomY(u)) / 2 }, Math.min(25, 9 / zoom), '#8096aa');

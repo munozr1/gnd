@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { buildPodProject } from '@/model/demo/pod';
 import { indexProject } from '@/model/query';
 import { portWorldPos, rackLocalToFloor, routePath3d, U_MM } from '@/model/routing';
+import { builtinCatalog } from '@/catalog';
+import { createProject, createRack } from '@/model/factories';
+import { addRack } from '@/model/routing/test-fixtures';
 import { buildPhysicalScene, boxCorners, metres, roomGrid } from './geometry';
 
 describe('physical scene from Pod A', () => {
@@ -61,4 +64,17 @@ it('frames the full height and rotated footprint of a rack', () => {
   expect(range(0)).toBeCloseTo(rack.depthMm / 1000);
   expect(range(1)).toBeCloseTo((rack.heightU * U_MM + 100) / 1000);
   expect(range(2)).toBeCloseTo(rack.widthMm / 1000);
+});
+
+it('builds a patch frame as an open frame: no door, frame-coloured posts and bars', () => {
+  const project = createProject('t', '2026-01-01T00:00:00.000Z'), rack = addRack(project, 'R01', { x: 1000, y: 1000 });
+  const frameDef = builtinCatalog.racks.find((r) => r.id === 'rack.patch-frame-12u')!;
+  const frame = createRack(frameDef, { name: 'PF-PP1', pos: { x: 2000, y: 1000 } });
+  project.racks.push(frame);
+  const scene = buildPhysicalScene(project), of = (id: string) => scene.frames.filter((p) => 'id' in p.target && p.target.id === id);
+  expect(scene.doors).toHaveLength(1);
+  expect(scene.doors[0]!.target).toEqual({ kind: 'rack', id: rack.id });
+  expect(of(frame.id).map((p) => p.color)).toEqual(['#8a7440', '#8a7440', '#8a7440', '#8a7440', '#5c4d2c', '#5c4d2c']);
+  expect(of(rack.id).map((p) => p.color)).toEqual(['#52687b', '#52687b', '#52687b', '#52687b', '#344a5c', '#344a5c']);
+  expect(scene.labels.map((l) => l.text)).toEqual(['R01', 'PF-PP1']);
 });

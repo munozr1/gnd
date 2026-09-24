@@ -19,5 +19,21 @@
     "heightU": 42,
     "widthMm": 800,
     "depthMm": 1070
+  },
+  {
+    "id": "rack.patch-frame-12u",
+    "name": "Patch panel frame 12U",
+    "heightU": 12,
+    "widthMm": 600,
+    "depthMm": 300,
+    "kind": "patch-frame"
+  },
+  {
+    "id": "rack.patch-frame-42u",
+    "name": "Patch rack 42U",
+    "heightU": 42,
+    "widthMm": 600,
+    "depthMm": 300,
+    "kind": "patch-frame"
   }
 ]

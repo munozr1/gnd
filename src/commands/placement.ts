@@ -137,3 +137,45 @@ export function nextRackName(project: Project): string {
 export function racksInOrder(project: Project): Rack[] {
   return [...snapshot(project).racks].sort((a, b) => compareNatural(a.name, b.name));
 }
+
+export const isPatchFrame = (rack: Pick<Rack, 'kind'>): boolean => (rack.kind ?? 'rack') === 'patch-frame';
+
+/** Default frame for a component that becomes its own rack: the patch frame, grown to fit tall devices. */
+export function defaultFrameDefId(project: Project, c: Component): string {
+  const cat = catalogIndex(project);
+  const height = heightUOf(project, c);
+  const frames = cat.catalog.racks.filter((r) => r.kind === 'patch-frame').sort((a, b) => a.heightU - b.heightU);
+  return (frames.find((r) => r.heightU >= height) ?? frames.at(-1) ?? cat.catalog.racks[0])!.id;
+}
+
+/** 'PF-<ref>' when free, else 'PF-<ref>-2', … */
+export function frameNameFor(project: Project, ref: string): string {
+  const taken = new Set(project.racks.map((r) => r.name));
+  const base = `PF-${ref}`;
+  if (!taken.has(base)) return base;
+  let n = 2;
+  while (taken.has(`${base}-${n}`)) n++;
+  return `${base}-${n}`;
+}
+
+/**
+ * Next free spot for a new free-standing frame: to the right of the
+ * right-most rack on the bottom row, on the floor grid; the room origin
+ * when the floor is empty.
+ */
+export function nextFreeFloorPos(project: Project, size: { widthMm: number; depthMm: number }): { x: number; y: number } {
+  const grid = project.room.gridMm || 600;
+  const racks = snapshot(project).racks;
+  if (racks.length === 0) return { x: grid, y: grid };
+  const rects = racks.map((r) => routing.rackFloorRect(r));
+  const bottom = Math.max(...rects.map((r) => r.y + r.height));
+  const rowTop = Math.max(...rects.map((r) => r.y));
+  const row = rects.filter((r) => r.y >= rowTop - 1);
+  const right = Math.max(...row.map((r) => r.x + r.width));
+  const x = Math.ceil((right + grid) / grid) * grid;
+  const y = Math.floor(rowTop / grid) * grid;
+  // Wrap to a new row when the frame would leave the room outline's bounds.
+  const roomRight = Math.max(...project.room.outline.map((p) => p.x));
+  if (x + size.widthMm > roomRight) return { x: grid, y: Math.ceil((bottom + grid) / grid) * grid };
+  return { x, y };
+}
