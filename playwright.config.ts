@@ -1,4 +1,4 @@
-import { defineConfig, devices } from '@playwright/test';
+import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
   testDir: './e2e',
@@ -9,6 +9,7 @@ export default defineConfig({
   use: {
     baseURL: 'http://localhost:5199',
     trace: 'retain-on-failure',
+    channel: process.env.PLAYWRIGHT_CHANNEL,
     viewport: { width: 1600, height: 1000 },
   },
   webServer: {
@@ -17,5 +18,5 @@ export default defineConfig({
     reuseExistingServer: true,
     timeout: 60_000,
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [{ name: 'chromium', use: { browserName: 'chromium' } }],
 });

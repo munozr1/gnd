@@ -4,7 +4,7 @@
  * compact label/control rows and the 'none' sentinel Radix Select needs
  * (it refuses empty-string item values).
  */
-import { forwardRef, useEffect, useState, type InputHTMLAttributes, type KeyboardEvent, type ReactNode } from 'react';
+import { forwardRef, useEffect, useRef, useState, type InputHTMLAttributes, type KeyboardEvent, type ReactNode } from 'react';
 import type { Command } from '@/store/commands';
 import { store } from '@/store';
 import { cn } from '@/ui/cn';
@@ -43,6 +43,7 @@ export const CommitInput = forwardRef<HTMLInputElement, CommitInputProps>(functi
   const [text, setText] = useState(value);
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const skipBlurCommit = useRef(false);
 
   useEffect(() => {
     if (!editing) {
@@ -72,10 +73,14 @@ export const CommitInput = forwardRef<HTMLInputElement, CommitInputProps>(functi
     onKeyDown?.(e);
     if (e.defaultPrevented) return;
     if (e.key === 'Enter') {
-      if (commit(text)) e.currentTarget.blur();
+      if (commit(text)) {
+        skipBlurCommit.current = true;
+        e.currentTarget.blur();
+      }
     } else if (e.key === 'Escape') {
       setText(value);
       setError(null);
+      skipBlurCommit.current = true;
       e.currentTarget.blur();
     }
   };
@@ -90,7 +95,10 @@ export const CommitInput = forwardRef<HTMLInputElement, CommitInputProps>(functi
         onFocus={() => setEditing(true)}
         onBlur={(e) => {
           setEditing(false);
-          commit(e.target.value);
+          // Escape reverts local state asynchronously; never save the old DOM
+          // value during the synchronous blur it triggers. Enter already saved.
+          if (!skipBlurCommit.current) commit(e.target.value);
+          skipBlurCommit.current = false;
           onBlur?.(e);
         }}
         onKeyDown={handleKeyDown}

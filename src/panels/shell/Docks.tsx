@@ -72,7 +72,7 @@ export function EditorFrame({ editor, children }: { editor: EditorId; children: 
     </div>
   );
   const withRight = right ? (
-    <SplitPane direction="horizontal" primary="second" defaultSize={300} minSize={200} minSecondarySize={300}>
+    <SplitPane className="h-full" direction="horizontal" primary="second" defaultSize={300} minSize={200} minSecondarySize={300}>
       {centre}
       <DockColumn editor={editor} side="right" />
     </SplitPane>
@@ -80,7 +80,7 @@ export function EditorFrame({ editor, children }: { editor: EditorId; children: 
     centre
   );
   return left ? (
-    <SplitPane direction="horizontal" primary="first" defaultSize={260} minSize={180} minSecondarySize={300}>
+    <SplitPane className="h-full" direction="horizontal" primary="first" defaultSize={260} minSize={180} minSecondarySize={300}>
       <DockColumn editor={editor} side="left" />
       {withRight}
     </SplitPane>

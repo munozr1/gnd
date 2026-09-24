@@ -11,6 +11,7 @@ import { registerDialog, registerPanel, registerToolbar } from '@/panels/registr
 import { store } from '@/store';
 import { LayoutInspector } from './LayoutInspector';
 import { LayoutToolbar } from './LayoutToolbar';
+import { UnplacedBin } from './UnplacedBin';
 import { LibraryPanel } from './LibraryPanel';
 import { PLACE_BY_RULE_DIALOG, PlaceByRuleDialog } from './PlaceByRuleDialog';
 import { ProposalsPanel } from './ProposalsPanel';
@@ -39,6 +40,7 @@ export function registerLayoutPanels(): void {
   registered = true;
   registerDialog({ id: UPDATE_LAYOUT_DIALOG, component: UpdateLayoutDialog });
   registerDialog({ id: PLACE_BY_RULE_DIALOG, component: PlaceByRuleDialog });
+  registerPanel({ id: 'layout.unplaced', editor: 'layout', side: 'left', title: 'Unplaced devices', component: UnplacedBin, order: 10 });
   registerPanel({ id: LAYOUT_LIBRARY_PANEL, editor: 'layout', side: 'left', title: 'Library', component: LibraryPanel, order: 20 });
   registerPanel({ id: LAYOUT_INSPECTOR_PANEL, editor: 'layout', side: 'right', title: 'Inspector', component: LayoutInspector, order: 10 });
   const registerProposals = (n: number) =>

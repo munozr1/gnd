@@ -10,7 +10,7 @@
     "typecheck": "tsc -b --pretty",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test",
+    "test:e2e": "playwright test --config=playwright.config.ts",
     "check": "tsc -b --pretty && vitest run && vite build",
     "gen:catalog": "tsx scripts/gen-catalog.ts",
     "lint": "eslint src --ext .ts,.tsx"

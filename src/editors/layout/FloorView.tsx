@@ -1,0 +1,152 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { produce } from 'immer';
+import { layout } from '@/commands';
+import { boundsOf, pointInPolygon, snapVec } from '@/model/geometry';
+import { indexProject } from '@/model/query';
+import { onRackMoved, portFloorPos, rackCenter, rackFloorRect, rackFrontDir, trayFill } from '@/model/routing';
+import type { SelectionItem, Vec2 } from '@/model/types';
+import { store, useLayoutUi, useProject, useSelection } from '@/store';
+import { registerShortcut } from '@/store/shortcuts';
+import { run } from '@/panels/layout/shared';
+import { useStatusBarFields } from '@/panels/shell/StatusBarContext';
+import { Button } from '@/ui/Button';
+import { caption, floorBounds, floorLinks, physicalSelectionBounds, selectedRackIds, stroke } from './physicalScene';
+import { PhysicalCanvas } from './PhysicalCanvas';
+import { segmentEntry, SegmentIndex } from './spatial';
+import { constrainPoint, trayAlongPolyline } from './constraints';
+
+export function FloorView() {
+  const project = useProject(), ui = useLayoutUi(), selection = useSelection();
+  const idx = indexProject(project);
+  const [cursor, setCursor] = useState<Vec2>({ x: 0, y: 0 });
+  const [points, setPoints] = useState<Vec2[]>([]);
+  const [preview, setPreview] = useState<{ ids: string[]; delta: Vec2 } | null>(null);
+  const drag = useRef<{ ids: string[]; start: Vec2 } | null>(null);
+  const scale = useRef(0.1);
+  const [fit, setFit] = useState(0);
+  const selectedRacks = selectedRackIds(project, selection);
+  const selectedLinks = new Set(selection.flatMap((s) => s.kind === 'link' ? [s.id] : []));
+  const data = useMemo(() => preview ? produce(project, (d) => {
+    for (const id of preview.ids) { const rack = d.racks.find((r) => r.id === id); if (rack) { rack.pos.x += preview.delta.x; rack.pos.y += preview.delta.y; onRackMoved(d, id, preview.delta); } }
+  }) : project, [project, preview]);
+  const links = useMemo(() => floorLinks(data), [data]);
+  const visibleLinks = links.filter((entry) => {
+    if (entry.routed) return !entry.layers.length || entry.layers.some((l) => ui.visibleLayers[l]);
+    if (ui.ratsnest === 'none') return false;
+    return ui.ratsnest === 'all' || selectedLinks.has(entry.link.id) || [entry.link.a, entry.link.b].some((e) => selectedRacks.includes(idx.rackOfComponent(e.componentId)?.id ?? ''));
+  });
+  const hitIndex = useMemo(() => new SegmentIndex<SelectionItem>([
+    ...visibleLinks.flatMap((l) => l.points.slice(1).map((p, i) => segmentEntry(l.points[i]!, p, { kind: 'link', id: l.link.id } as SelectionItem))),
+    ...data.trays.filter((t) => ui.visibleLayers[t.layer]).flatMap((t) => t.points.slice(1).map((p, i) => segmentEntry(t.points[i]!, p, { kind: 'tray', id: t.id } as SelectionItem))),
+  ]), [visibleLinks, data.trays, ui.visibleLayers]);
+  const bounds = useMemo(() => floorBounds(project), [project]);
+  const frame = useMemo(() => {
+    const r = ui.viewportRequest;
+    return !r || (ui.view === 'split' && r.kind === 'items' && r.items.some((i) => i.kind === 'component')) ? null : r.kind === 'fit' ? bounds : r.kind === 'rect' ? r.rect : physicalSelectionBounds(project, r.items);
+  }, [ui.viewportRequest, ui.view, project, bounds]);
+  const handled = useCallback(() => store.getState().requestViewport('layout', null), []);
+  const cancel = useCallback(() => { drag.current = null; setPreview(null); setPoints([]); store.getState().patchLayout({ tool: 'select', placing: null, routingLinkId: null }); }, []);
+  useEffect(() => { setPoints([]); setPreview(null); drag.current = null; }, [project.id, ui.tool, ui.placing]);
+  useStatusBarFields({ mode: `Layout · ${ui.tool}`, coords: `x ${Math.round(cursor.x)}  y ${Math.round(cursor.y)} mm`, message: ui.tool === 'select' ? 'Drag racks · Double-click a rack for elevation · X route · Scroll to zoom' : 'Click points · Enter finishes · Esc cancels' });
+  const finish = () => {
+    if (ui.tool === 'route' && ui.routingLinkId && points.length) {
+      const link = idx.link(ui.routingLinkId), end = link && portFloorPos(project, link.b.componentId, link.b.portId);
+      if (end) {
+        const last = points.at(-1)!;
+        const path = [...points, { x: end.x, y: last.y }, end];
+        const trayId = trayAlongPolyline(path, project.trays, 150, ui.activeLayer);
+        if (run(layout.finishRoute(ui.routingLinkId, [{ layer: ui.activeLayer, points: path, ...(trayId ? { trayId } : {}) }]))) cancel();
+      }
+    } else if (ui.placing?.kind === 'tray' && points.length >= 2) {
+      const def = idx.catalog.trays.get(ui.placing.defId);
+      if (def && run(layout.addTray(def, points, ui.placing.elevationMm))) cancel();
+    } else if (ui.tool === 'keepout' && points.length >= 3) { if (run(layout.addKeepout({ outline: points }))) cancel(); }
+    else if (ui.tool === 'room' && points.length >= 3) { if (run(layout.setRoomOutline(points))) cancel(); }
+  };
+  const startRoute = (id?: string) => {
+    const linkId = id ?? selection.find((s) => s.kind === 'link')?.id;
+    const link = linkId && idx.link(linkId);
+    if (!link) return;
+    const start = portFloorPos(project, link.a.componentId, link.a.portId);
+    if (!start || !portFloorPos(project, link.b.componentId, link.b.portId)) return;
+    store.getState().patchLayout({ tool: 'route', routingLinkId: link.id, placing: null });
+  };
+  useEffect(() => {
+    if (ui.tool === 'route' && ui.routingLinkId) {
+      const link = idx.link(ui.routingLinkId), p = link && portFloorPos(project, link.a.componentId, link.a.portId);
+      if (p) setPoints([p]);
+    }
+  }, [ui.tool, ui.routingLinkId, project.id]);
+  useEffect(() => {
+    const bind = (id: string, keys: string | string[], handler: () => void) => registerShortcut({ id: `floor.${id}`, editor: 'layout', keys, handler, when: () => !store.getState().ui.activeDialog });
+    const off = [bind('cancel', 'escape', cancel), bind('finish', 'enter', finish), bind('route', 'x', () => startRoute()), bind('rotate', 'r', () => { for (const id of selectedRacks) run(layout.rotateRack(id)); }), bind('delete', ['delete', 'backspace'], () => {
+      if (selectedRacks.length && selection.every((s) => s.kind === 'rack')) run(layout.deleteRacks(selectedRacks));
+      else if (selectedLinks.size) run(layout.unroute([...selectedLinks]));
+      else { const ids = selection.flatMap((s) => s.kind === 'component' ? [s.id] : []); if (ids.length) run(layout.unplaceComponent(ids)); }
+    })];
+    return () => off.forEach((f) => f());
+  });
+  const rackAt = (p: Vec2) => [...data.racks].reverse().find((r) => { const b = rackFloorRect(r); return p.x >= b.x && p.x <= b.x + b.width && p.y >= b.y && p.y <= b.y + b.height; });
+  const snapped = (p: Vec2) => snapVec(p, ui.snapMm || 1);
+  const drawingPoint = points.length && (ui.tool === 'tray' || ui.tool === 'route') ? constrainPoint(points.at(-1)!, snapped(cursor), 'ortho') : snapped(cursor);
+  return <div className="relative h-full min-h-0" data-rack-count={project.racks.length} data-route-count={links.filter((l) => l.routed).length} data-airwire-count={links.filter((l) => !l.routed).length}>
+    <PhysicalCanvas testId="floor-canvas" label="Floor plan" bounds={bounds} resetKey={`${project.id}:${fit}`} frame={frame} onFrame={handled} onCancel={cancel}
+      onDown={(p, e) => {
+        if (ui.placing?.kind === 'rack') { const def = idx.catalog.racks.get(ui.placing.defId); if (def) run(layout.addRack(def, snapVec(p, project.room.gridMm))); return; }
+        if (ui.tool === 'tray' || ui.tool === 'route' || ui.tool === 'room' || ui.tool === 'keepout') { setPoints((old) => [...old, old.length && (ui.tool === 'tray' || ui.tool === 'route') ? constrainPoint(old.at(-1)!, snapped(p), e.shift ? 'diag' : 'ortho') : snapped(p)]); return; }
+        const rack = rackAt(p);
+        const lineHit = hitIndex.nearest(p, 7 / scale.current);
+        if (rack && !e.alt) {
+          if (e.shift) { store.getState().select({ kind: 'rack', id: rack.id }, { toggle: true }); return; }
+          const ids = selection.some((s) => s.kind === 'rack' && s.id === rack.id) ? selection.flatMap((s) => s.kind === 'rack' ? [s.id] : []) : [rack.id];
+          store.getState().select(ids.map((id) => ({ kind: 'rack', id }))); drag.current = { ids, start: p };
+        } else if (lineHit) store.getState().select(lineHit.ref, { toggle: e.shift });
+        else { const keepout = project.keepouts.find((k) => pointInPolygon(p, k.outline)); if (keepout) store.getState().select({ kind: 'keepout', id: keepout.id }); else store.getState().clearSelection(); }
+      }}
+      onMove={(p) => { setCursor(p); const g = drag.current; if (g) setPreview({ ids: g.ids, delta: snapVec({ x: p.x - g.start.x, y: p.y - g.start.y }, ui.snapMm || 1) }); }}
+      onUp={() => { if (preview && (preview.delta.x || preview.delta.y)) run(layout.moveRacks(preview.ids, preview.delta, crypto.randomUUID())); drag.current = null; setPreview(null); }}
+      onDoubleClick={(p) => { const rack = rackAt(p); if (rack) { store.getState().setElevationRacks([rack.id]); store.getState().setLayoutView('elevation'); } else { const hit = hitIndex.nearest(p, 8 / scale.current); if (hit?.ref.kind === 'link') startRoute(hit.ref.id); } }}
+      paint={(ctx, zoom) => {
+        scale.current = zoom;
+        const room = data.room.outline;
+        stroke(ctx, room, '#44566a', 2 / zoom, true); ctx.fillStyle = '#141e28'; ctx.fill();
+        const b = boundsOf(room), grid = Math.max(100, data.room.gridMm);
+        ctx.save(); ctx.clip();
+        // Bound the grid work for imported rooms with very large extents.
+        const step = grid * Math.max(1, Math.ceil(Math.max(b.width, b.height) / grid / 200));
+        for (let x = Math.ceil(b.x / step) * step; x <= b.x + b.width; x += step) stroke(ctx, [{ x, y: b.y }, { x, y: b.y + b.height }], '#24313e', 0.5 / zoom);
+        for (let y = Math.ceil(b.y / step) * step; y <= b.y + b.height; y += step) stroke(ctx, [{ x: b.x, y }, { x: b.x + b.width, y }], '#24313e', 0.5 / zoom);
+        ctx.restore();
+        for (const k of data.keepouts) { stroke(ctx, k.outline, '#dd9a58', 1 / zoom, true); ctx.fillStyle = '#b9742828'; ctx.fill(); const r = boundsOf(k.outline); caption(ctx, k.name, { x: r.x + r.width / 2, y: r.y + r.height / 2 }, 10 / zoom, '#ddb079'); }
+        for (const r of data.racks) {
+          const b = rackFloorRect(r), selected = selectedRacks.includes(r.id), center = rackCenter(r), front = rackFrontDir(r);
+          ctx.fillStyle = selected ? '#204467' : '#25394c'; ctx.fillRect(b.x, b.y, b.width, b.height);
+          ctx.strokeStyle = selected ? '#69bfff' : '#6f8aa2'; ctx.lineWidth = (selected ? 2 : 1) / zoom; ctx.strokeRect(b.x, b.y, b.width, b.height);
+          caption(ctx, r.name, { x: center.x, y: center.y - 80 }, 12 / zoom);
+          caption(ctx, `${idx.componentsInRack(r.id).length} devices`, { x: center.x, y: center.y + 110 }, 9 / zoom, '#9bb3c8');
+          const tip = { x: center.x + front.x * r.depthMm * 0.42, y: center.y + front.y * r.depthMm * 0.42 };
+          stroke(ctx, [center, tip], '#7edac4', 2 / zoom);
+          caption(ctx, 'F', tip, 9 / zoom, '#7edac4');
+        }
+        for (const t of data.trays) {
+          if (!ui.visibleLayers[t.layer]) continue;
+          ctx.globalAlpha = t.layer === ui.activeLayer ? 0.65 : 0.3;
+          stroke(ctx, t.points, t.kind === 'fiber-runway' ? '#e9c350' : '#a2b6c9', Math.max(t.widthMm, 5 / zoom)); ctx.globalAlpha = 1;
+          if (t.points[0]) caption(ctx, `${t.name ?? t.kind} · ${Math.round((trayFill(data, t.id)?.fraction ?? 0) * 100)}%`, { x: t.points[0].x, y: t.points[0].y - 180 }, 10 / zoom, '#dec578');
+          for (const f of t.fittings) { ctx.fillStyle = '#efcc67'; ctx.beginPath(); ctx.arc(f.at.x, f.at.y, 4 / zoom, 0, Math.PI * 2); ctx.fill(); }
+        }
+        for (const l of visibleLinks) {
+          ctx.globalAlpha = selectedLinks.has(l.link.id) ? 1 : l.routed ? 0.8 : 0.35;
+          ctx.setLineDash(l.routed ? [] : [4 / zoom, 4 / zoom]);
+          stroke(ctx, l.points, selectedLinks.has(l.link.id) ? '#ffffff' : l.color, (selectedLinks.has(l.link.id) ? 3 : l.routed ? 1.5 : 0.8) / zoom);
+        }
+        ctx.setLineDash([]); ctx.globalAlpha = 1;
+        if (points.length) stroke(ctx, [...points, drawingPoint], '#76c6ff', 2 / zoom, ui.tool === 'keepout' || ui.tool === 'room');
+        if (ui.placing?.kind === 'rack') { const def = idx.catalog.racks.get(ui.placing.defId), p = snapVec(cursor, project.room.gridMm); if (def) { ctx.fillStyle = '#78c8ff44'; ctx.fillRect(p.x, p.y, def.widthMm, def.depthMm); } }
+      }}>
+      <div className="absolute bottom-2 left-2 rounded border border-border bg-panel/90 px-2 py-1 text-xs text-fg-muted">{project.racks.length} racks · {project.placements.filter((p) => p.rackId).length} placed devices · {links.filter((l) => l.routed).length} routed cables</div>
+      <div className="absolute right-2 top-2 flex gap-1"><Button onClick={() => setFit((v) => v + 1)}>Fit floor</Button>{points.length > 0 && <Button onClick={finish}>Finish</Button>}</div>
+      {!project.racks.length && <p className="pointer-events-none absolute inset-x-0 top-1/2 text-center text-fg-muted">Add racks from the Library, then place devices in Elevation.</p>}
+    </PhysicalCanvas>
+  </div>;
+}
