@@ -296,6 +296,7 @@ describe('runDrc', () => {
       'manager-overfill',
       'missing-waterfall',
       'tray-clearance',
+      'cable-length-short',
     ]);
     expect(drcRuleById('u-collision')?.defaultSeverity).toBe('error');
     expect(drcRuleById('nope')).toBeUndefined();

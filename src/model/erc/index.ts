@@ -8,6 +8,10 @@
 import { indexProject, type ProjectIndex } from '@/model/query';
 import type { Issue, Project, Severity } from '@/model/types';
 import type { Rule } from './rule';
+import { cableConnectorMismatchRule } from './rules/cable-connector-mismatch';
+import { cableDefInvalidRule } from './rules/cable-def-invalid';
+import { cableLegUnassignedRule } from './rules/cable-leg-unassigned';
+import { cableUnusedFibersRule } from './rules/cable-unused-fibers';
 import { connectorMismatchRule } from './rules/connector-mismatch';
 import { formFactorMismatchRule } from './rules/form-factor-mismatch';
 import { mediaMismatchRule } from './rules/media-mismatch';
@@ -21,6 +25,10 @@ import { unconnectedUplinksRule } from './rules/unconnected-uplinks';
 export type { Rule } from './rule';
 export { componentTarget, ercIssue, hashKey, issueId, linkTarget, targetKey } from './rule';
 export {
+  cableConnectorMismatchRule,
+  cableDefInvalidRule,
+  cableLegUnassignedRule,
+  cableUnusedFibersRule,
   connectorMismatchRule,
   formFactorMismatchRule,
   mediaMismatchRule,
@@ -32,7 +40,7 @@ export {
   unconnectedUplinksRule,
 };
 
-/** All ERC rules, in the order the spec lists them. */
+/** All ERC rules: the nine of the spec table in its order, then the installed-cable rules (docs/specs/cables-task.md). */
 export const ercRules: readonly Rule[] = [
   portReuseRule,
   formFactorMismatchRule,
@@ -43,6 +51,10 @@ export const ercRules: readonly Rule[] = [
   unassignedModelRule,
   singleHomedServerRule,
   unconnectedUplinksRule,
+  cableDefInvalidRule,
+  cableConnectorMismatchRule,
+  cableLegUnassignedRule,
+  cableUnusedFibersRule,
 ];
 
 export const ercRuleById: ReadonlyMap<string, Rule> = new Map(ercRules.map((r) => [r.id, r]));

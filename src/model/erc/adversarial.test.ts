@@ -4,9 +4,10 @@
  * issue-id stability across runs, re-annotation and reordering.
  */
 import { describe, expect, it } from 'vitest';
-import { createProject } from '@/model/factories';
+import { builtinCatalog } from '@/catalog';
+import { createCable, createProject } from '@/model/factories';
 import { ProjectIndex } from '@/model/query';
-import type { Issue, Project } from '@/model/types';
+import type { Component, Issue, Project } from '@/model/types';
 import {
   GPU_SERVER,
   LC_PANEL,
@@ -117,6 +118,22 @@ function buildBadDesign(): Project {
   connect(p, end(leaf, 'eth1/49'), end(spine, 'eth1/1'), 'cbl.om4-duplex'); // LC cable on MPO optic
   connect(p, end(leaf, 'eth1/50'), end(spine, 'eth1/2'), 'cbl.om4-mpo-trunk'); // missing optic
   connect(p, end(orphan, 'eth1/49'), end(spine, 'eth1/3'), 'cbl.om4-mpo-trunk');
+  // Installed cables: T-9 on a definition that does not split evenly; T-1 (an 8F MPO-8 -> 4xLC trunk) with its MPO
+  // leg in an empty cage, two LC legs on a panel and two legs unassigned, so half of its fibers are out of service.
+  const trunkDef = builtinCatalog.cables.find((c) => c.id === 'cbl.om4-8f-mpo8-4lc')!;
+  const panel = addComponent(p, LC_PANEL, 'PP1');
+  p.customCatalog.cables.push({ ...trunkDef, id: 'cbl.custom.bad', name: '16F bad', fiberCount: 16, sideA: { connector: 'MPO-12' }, sideB: { connector: 'LC-duplex' } });
+  p.cables.push({ id: 'cable-bad', label: 'T-9', cableDefId: 'cbl.custom.bad', plugs: [] });
+  const trunk = createCable(trunkDef, 'T-1');
+  const plug = (side: 'A' | 'B', leg: number, c: Component, portId: string): void => {
+    const x = trunk.plugs.find((q) => q.side === side && q.leg === leg)!;
+    x.componentId = c.id;
+    x.portId = portId;
+  };
+  plug('A', 0, leaf, 'eth1/50');
+  plug('B', 0, panel, 'f1');
+  plug('B', 1, panel, 'f2');
+  p.cables.push(trunk);
   return p;
 }
 
