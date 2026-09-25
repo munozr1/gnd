@@ -20,6 +20,7 @@ import {
 import { indexProject } from '../query';
 import type { Id, Project, Route, RouteSegment, RoutingLayer, Tray, Vec2, Waypoint } from '../types';
 import { autoInRackPath } from './dressing';
+import { resolveEndsOf, resolveRouteEnds } from './owner';
 import { routeEndFloorPos } from './path3d';
 import { managerFloorRect, rackFloorRect } from './positions';
 
@@ -276,9 +277,9 @@ function squareToRef(wp: Waypoint, ref: Vec2, inward: Waypoint | undefined): voi
  */
 export function onEndpointMoved(draft: Project, linkId: Id, end: 'a' | 'b'): boolean {
   const route = draft.routes[linkId];
-  const link = draft.links.find((l) => l.id === linkId);
-  if (!route || !link) return false;
-  const endRef = end === 'a' ? link.a : link.b;
+  const ends = route && resolveRouteEnds(indexProject(snapshot(draft)), route);
+  if (!route || !ends) return false;
+  const endRef = end === 'a' ? ends.a : ends.b;
   const key = end === 'a' ? 'aRack' : 'bRack';
   if (!route[key].pinned) route[key] = autoInRackPath(snapshot(draft), endRef.componentId, endRef.portId);
 
@@ -304,7 +305,11 @@ export interface LayerPoints {
   points: Vec2[];
 }
 
-/** Build a route from hand-routed floor points per layer, auto-dressing both in-rack ends. */
+/**
+ * Build a route from hand-routed floor points per layer, auto-dressing both
+ * in-rack ends. `linkId` may be a cable id: the route is then the cable's
+ * jacket (`owner: 'cable'`), dressed from each side's first plugged leg.
+ */
 export function newRouteFromPoints(
   project: Project,
   linkId: Id,
@@ -312,8 +317,8 @@ export function newRouteFromPoints(
   pinByDefault: boolean = project.settings.pinWaypointsByDefault,
 ): Route | null {
   const view = snapshot(project);
-  const link = indexProject(view).link(linkId);
-  if (!link) return null;
+  const ends = resolveEndsOf(indexProject(view), linkId);
+  if (!ends) return null;
   const segments: RouteSegment[] = layerPoints.map((lp) => ({
     layer: lp.layer,
     trayId: lp.trayId ?? null,
@@ -321,8 +326,9 @@ export function newRouteFromPoints(
   }));
   const route: Route = {
     linkId,
-    aRack: autoInRackPath(view, link.a.componentId, link.a.portId),
-    bRack: autoInRackPath(view, link.b.componentId, link.b.portId),
+    ...(ends.owner === 'cable' ? { owner: 'cable' as const } : {}),
+    aRack: autoInRackPath(view, ends.a.componentId, ends.a.portId),
+    bRack: autoInRackPath(view, ends.b.componentId, ends.b.portId),
     segments,
   };
   anchorWaypointsInRacks(view, route);

@@ -7,7 +7,8 @@
  */
 import { indexProject } from '../query';
 import type { Id, Project, Room, Route, RouteSegment, RoutingLayer, Side, Vec2, Vec3 } from '../types';
-import { inRackPolyline3dDetailed, same3 } from './dressing';
+import { inRackPolyline3dDetailed, same3, type InRackPolyline } from './dressing';
+import { furcationWorldPos, resolveRouteEnds, type RouteEnds } from './owner';
 import { floorToWorld, managerFloorCenter, portPlacement, rackEntryPoints, rackTopMm } from './positions';
 
 /** Default elevation of a routing layer when a segment rides no specific tray. */
@@ -61,19 +62,38 @@ const lastNonEmpty = (segments: readonly RouteSegment[]): RouteSegment | undefin
   return segments[segments.length - 1];
 };
 
+/**
+ * A cable jacket ends at the side's furcation point instead of the port. The
+ * furcation is a free floor point (by default in front of the ports, at the
+ * breakout length), so the jacket never enters that side's rack: it drops
+ * vertically from the tray elevation to the furcation at the ports' mean
+ * elevation, and the legs are dressed from there. The rack-dressed polyline
+ * of the side's first leg is only used as an elevation fallback when no port
+ * of the side is placed.
+ */
+function jacketEnd(project: Project, ends: RouteEnds, side: 'A' | 'B', polyline: InRackPolyline, trayElevationMm: number): InRackPolyline {
+  const furcation = side === 'A' ? ends.furcationA : ends.furcationB;
+  if (!furcation || !ends.cable) return polyline;
+  const at = furcationWorldPos(project, ends.cable, side) ?? floorToWorld(furcation, polyline.points[0]!.y);
+  return { points: [at, floorToWorld(furcation, trayElevationMm)], riseStart: 0 };
+}
+
+/** Full 3D pathway of a route by its key (a link id, or a cable id for a jacket route). */
 export function routePath3d(project: Project, linkId: Id): RoutePath3d | null {
   const idx = indexProject(project);
   const route = idx.route(linkId);
-  const link = idx.link(linkId);
-  if (!route || !link) return null;
+  const ends = route && resolveRouteEnds(idx, route);
+  if (!route || !ends) return null;
 
   const firstSeg = firstNonEmpty(route.segments);
   const lastSeg = lastNonEmpty(route.segments);
   const elevA = firstSeg ? segmentElevationMm(project, firstSeg) : defaultLayerElevationMm(project.room, 'in-rack');
   const elevB = lastSeg ? segmentElevationMm(project, lastSeg) : elevA;
-  const a = inRackPolyline3dDetailed(project, link.a.componentId, link.a.portId, route.aRack, elevA);
-  const b = inRackPolyline3dDetailed(project, link.b.componentId, link.b.portId, route.bRack, elevB);
-  if (!a || !b) return null;
+  const aRaw = inRackPolyline3dDetailed(project, ends.a.componentId, ends.a.portId, route.aRack, elevA);
+  const bRaw = inRackPolyline3dDetailed(project, ends.b.componentId, ends.b.portId, route.bRack, elevB);
+  if (!aRaw || !bRaw) return null;
+  const a = jacketEnd(project, ends, 'A', aRaw, elevA);
+  const b = jacketEnd(project, ends, 'B', bRaw, elevB);
 
   const points: Vec3[] = [];
   const push = (p: Vec3): number => {
@@ -150,12 +170,15 @@ export function routePath3d(project: Project, linkId: Id): RoutePath3d | null {
 /**
  * Floor-plan point where a route's hand-routed path meets the rack at one
  * end: the top entry on the route's side for overhead runs, the bottom entry
- * for underfloor runs, and the manager column for in-rack runs.
+ * for underfloor runs, and the manager column for in-rack runs. A cable
+ * jacket end that fans out meets its furcation point instead (see `jacketEnd`).
  */
 export function routeEndFloorPos(project: Project, route: Route, end: 'a' | 'b'): Vec2 | null {
-  const link = indexProject(project).link(route.linkId);
-  if (!link) return null;
-  const endRef = end === 'a' ? link.a : link.b;
+  const ends = resolveRouteEnds(indexProject(project), route);
+  if (!ends) return null;
+  const furcation = end === 'a' ? ends.furcationA : ends.furcationB;
+  if (furcation) return furcation;
+  const endRef = end === 'a' ? ends.a : ends.b;
   const info = portPlacement(project, endRef.componentId, endRef.portId);
   if (!info) return null;
   const seg = end === 'a' ? firstNonEmpty(route.segments) : lastNonEmpty(route.segments);
@@ -174,14 +197,16 @@ export function bundles(project: Project): Map<string, Id[]> {
   const idx = indexProject(project);
   const out = new Map<string, Id[]>();
   for (const route of Object.values(project.routes)) {
-    const link = idx.link(route.linkId);
-    if (!link) continue;
-    const ends: [typeof link.a, Side][] = [
-      [link.a, route.aRack.side],
-      [link.b, route.bRack.side],
+    const resolved = resolveRouteEnds(idx, route);
+    if (!resolved) continue;
+    const ends: [typeof resolved.a, Side, Vec2 | undefined][] = [
+      [resolved.a, route.aRack.side, resolved.furcationA],
+      [resolved.b, route.bRack.side, resolved.furcationB],
     ];
     const seen = new Set<string>();
-    for (const [endRef, side] of ends) {
+    for (const [endRef, side, furcation] of ends) {
+      // A jacket end at a furcation point never rides the rack's manager; its legs are dressed from the furcation.
+      if (furcation) continue;
       const rack = idx.rackOfComponent(endRef.componentId);
       if (!rack) continue;
       const key = bundleKey(rack.id, side);

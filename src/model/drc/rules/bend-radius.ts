@@ -1,5 +1,6 @@
 import { cornerAngleDeg, dist, eq } from '../../geometry';
 import { indexProject } from '../../query';
+import { resolveRouteEnds, routeLabel, routeSelection } from '../../routing/owner';
 import { segmentElevationMm } from '../../routing/path3d';
 import type { Project, Route, Vec2 } from '../../types';
 import { defineRule, type DrcFinding } from '../rule';
@@ -49,9 +50,9 @@ export const bendRadius = defineRule({
     const idx = indexProject(project);
     const out: DrcFinding[] = [];
     for (const route of Object.values(project.routes)) {
-      const link = idx.link(route.linkId);
-      const cable = link ? idx.cableOf(link) : undefined;
-      if (!link || !cable) continue;
+      const ends = resolveRouteEnds(idx, route);
+      const cable = ends?.cableDef;
+      if (!ends || !cable) continue;
       let tight = 0;
       let shortest = Infinity;
       for (const pts of floorPolylines(project, route)) {
@@ -70,8 +71,8 @@ export const bendRadius = defineRule({
       if (tight === 0) continue;
       out.push({
         key: route.linkId,
-        message: `${idx.linkLabel(link)}: ${tight} corner${tight > 1 ? 's' : ''} tighter than the ${cable.bendRadiusMm} mm bend radius of ${cable.name} (shortest leg ${Math.round(shortest)} mm)`,
-        targets: [{ kind: 'route', id: route.linkId }, { kind: 'link', id: link.id }],
+        message: `${routeLabel(idx, ends)}: ${tight} corner${tight > 1 ? 's' : ''} tighter than the ${cable.bendRadiusMm} mm bend radius of ${cable.name} (shortest leg ${Math.round(shortest)} mm)`,
+        targets: [{ kind: 'route', id: route.linkId }, routeSelection(route)],
       });
     }
     return out;

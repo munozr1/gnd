@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { isPatchFrame, layout } from '@/commands';
+import { isPlugged, resolveCableOf } from '@/model/cables';
 import { indexProject } from '@/model/query';
+import { autoInRackPath } from '@/model/routing';
 import type { Vec2 } from '@/model/types';
 import { store, useLayoutUi, useProject, useSelection } from '@/store';
 import { registerShortcut } from '@/store/shortcuts';
@@ -8,7 +10,7 @@ import { run } from '@/panels/layout/shared';
 import { Button } from '@/ui/Button';
 import { Select } from '@/ui/Select';
 import { PhysicalCanvas } from '../PhysicalCanvas';
-import { caption, selectedRackIds, stroke } from '../physicalScene';
+import { caption, furcationGlyph, selectedRackIds, stroke } from '../physicalScene';
 import { columnAt, columnRect, columnsBounds, deviceRect, dropSlot, ghostFit, layoutColumns, managerCenterX, portPoint, uAtY, uBottomY, uTopY } from './geometry';
 import { COMPONENT_MIME, portTypeColor } from './constants';
 
@@ -47,6 +49,11 @@ export function ElevationView() {
   const request = ui.viewportRequest;
   const frame = useMemo(() => request && request.kind !== 'rect' ? bounds : null, [request, bounds.x, bounds.y, bounds.width, bounds.height]);
   const handled = useCallback(() => store.getState().requestViewport('layout', null), []);
+  /** Port point of a link end / cable plug on a device shown in this elevation, or null. */
+  const portOf = (componentId: string, portId: string) => {
+    const d = devices.find((d) => d.c.id === componentId), port = d?.fp?.ports.find((p) => p.id === portId);
+    return d && port ? { ...d, point: portPoint(d.column, d.p.uPosition!, port, d.p.face, d.fp?.widthMm) } : null;
+  };
   return <div className="flex h-full min-h-0 flex-col" data-testid="elevation-view" data-device-count={devices.length}>
     <div className="flex h-7 shrink-0 items-center gap-1 border-b border-border px-1">
       <Select aria-label="Elevation rack" value={followed.length === 1 ? followed[0] : 'all'} onValueChange={(v) => { store.getState().patchLayout({ elevationFollowsSelection: false, elevationRackIds: v === 'all' ? [] : [v] }); }} options={[{ value: 'all', label: 'All racks' }, ...project.racks.map((r) => ({ value: r.id, label: r.name }))]} />
@@ -93,12 +100,11 @@ export function ElevationView() {
           }
         }
         for (const link of project.links) {
+          // Links a cable owns are drawn by the cable below (jacket + legs).
+          if (link.cableId !== undefined && idx.cable(link.cableId)) continue;
           const route = project.routes[link.id], selected = selection.some((s) => s.kind === 'link' && s.id === link.id);
           if (!route && (ui.ratsnest === 'none' || (ui.ratsnest === 'selection' && !selected && ![link.a, link.b].some((e) => selection.some((s) => s.kind === 'component' && s.id === e.componentId))))) continue;
-          const ends = [link.a, link.b].map((end) => {
-            const d = devices.find((d) => d.c.id === end.componentId), port = d?.fp?.ports.find((p) => p.id === end.portId);
-            return d && port ? { ...d, point: portPoint(d.column, d.p.uPosition!, port, d.p.face, d.fp?.widthMm) } : null;
-          });
+          const ends = [link.a, link.b].map((end) => portOf(end.componentId, end.portId));
           const color = selected ? '#fff' : idx.cableOf(link)?.color ?? '#85b2c9';
           ctx.globalAlpha = selected ? 1 : route ? 0.7 : 0.25; ctx.setLineDash(route ? [] : [4 / zoom, 4 / zoom]);
           const a = ends[0], b = ends[1];
@@ -110,6 +116,43 @@ export function ElevationView() {
             });
             if (a && b && a.column.rack.id !== b.column.rack.id) stroke(ctx, [{ x: managerCenterX(a.column, route.aRack.side), y: a.column.y - 100 }, { x: managerCenterX(b.column, route.bRack.side), y: b.column.y - 100 }], color, 1 / zoom);
           }
+        }
+        // Installed cables: the legs of a fanned side run from their ports to a furcation node at the manager column (a stub, like an
+        // external airwire); from there the jacket leaves through the manager and the rack top like any routed cable.
+        for (const cable of project.cables ?? []) {
+          const resolved = resolveCableOf(project, cable);
+          if (!resolved) continue;
+          const route = project.routes[cable.id], selected = selection.some((s) => s.kind === 'cable' && s.id === cable.id);
+          const touches = selection.some((s) => s.kind === 'component' && cable.plugs.some((p) => p.componentId === s.id));
+          if (!route && (ui.ratsnest === 'none' || (ui.ratsnest === 'selection' && !selected && !touches))) continue;
+          const ends = (['A', 'B'] as const).map((side) => {
+            const legs = cable.plugs.flatMap((plug) => { if (plug.side !== side || !isPlugged(plug)) return []; const d = portOf(plug.componentId, plug.portId); return d ? [{ ...d, plug }] : []; });
+            const first = legs[0];
+            if (!first) return null;
+            const multi = (side === 'A' ? resolved.sideA : resolved.sideB).legs.length > 1;
+            const rackSide = route ? (side === 'A' ? route.aRack : route.bRack).side : autoInRackPath(project, first.c.id, first.plug.portId).side;
+            const x = managerCenterX(first.column, rackSide);
+            const hub = multi ? { x, y: legs.reduce((s, l) => s + l.point.y, 0) / legs.length } : first.point;
+            return { side, legs, column: first.column, multi, hub, x, pinned: !!cable.furcation?.[side]?.pinned };
+          });
+          const [a, b] = ends;
+          if (!a && !b) continue;
+          const color = selected ? '#fff' : resolved.color;
+          ctx.globalAlpha = selected ? 1 : route ? 0.8 : 0.4;
+          for (const end of ends) {
+            if (!end) continue;
+            if (end.multi) {
+              ctx.setLineDash([3 / zoom, 3 / zoom]);
+              for (const leg of end.legs) stroke(ctx, [leg.point, end.hub], color, (selected ? 1.5 : 0.8) / zoom);
+              ctx.setLineDash([]);
+              furcationGlyph(ctx, end.hub, end.pinned, 5 / zoom, color, 1.2 / zoom);
+            }
+            const other = end === a ? b : a;
+            const top = other && other.column.rack.id === end.column.rack.id ? other.hub.y : end.column.y - 100;
+            ctx.setLineDash(route ? [] : [4 / zoom, 4 / zoom]);
+            stroke(ctx, [end.hub, { x: end.x, y: end.hub.y }, { x: end.x, y: top }], color, (selected ? 2 : route ? 1.4 : 0.9) / zoom);
+          }
+          if (a && b && a.column.rack.id !== b.column.rack.id) stroke(ctx, [{ x: a.x, y: a.column.y - 100 }, { x: b.x, y: b.column.y - 100 }], color, 1.2 / zoom);
         }
         ctx.globalAlpha = 1; ctx.setLineDash([]);
         if (ghost) { const col = columns.find((c) => c.rack.id === ghost.rackId), c = idx.component(ghost.id); if (col && c) { const r = deviceRect(col, ghost.u, idx.heightUOf(c)); ctx.fillStyle = ghost.ok ? '#4ade8066' : '#ff555577'; ctx.fillRect(r.x, r.y, r.width, r.height); } }

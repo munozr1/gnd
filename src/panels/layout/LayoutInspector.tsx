@@ -88,6 +88,10 @@ export function LayoutInspector() {
       case 'link':
         body = <RouteInspector linkId={primary.id} />;
         break;
+      case 'cable':
+        // An installed cable's route is its jacket, keyed by the cable id.
+        body = <RouteInspector linkId={primary.id} />;
+        break;
       case 'tray':
         body = <TrayInspector trayId={primary.id} />;
         break;

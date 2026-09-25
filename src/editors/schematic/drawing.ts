@@ -1,9 +1,15 @@
+import type { CableSchematicDrawing, CableSchematicEnd } from '@/model/cables';
+import { add, scale } from '@/model/geometry';
 import { indexProject } from '@/model/query';
 import { wireMidpoint, worldSide } from '@/model/schematic';
 import type { Project, Vec2 } from '@/model/types';
-import type { DeviceDrawing, Scene, WireDrawing } from './scene';
+import { legKey, type DeviceDrawing, type Scene, type WireDrawing } from './scene';
 
-export const COLORS = { body: '#182331', border: '#4f6b82', text: '#dce6ef', muted: '#8298ae', accent: '#60b7ff', wire: '#67c9bc', dim: '#3a4858' };
+export const COLORS = { body: '#182331', border: '#4f6b82', text: '#dce6ef', muted: '#8298ae', accent: '#60b7ff', hover: '#b7e3ff', wire: '#67c9bc', dim: '#3a4858' };
+export const WIRE_WIDTH = 1.2;
+/** A cable jacket is three plain wires wide; its legs are plain wires. */
+export const JACKET_WIDTH = WIRE_WIDTH * 3;
+const CANVAS_BG = '#10151d';
 
 export function line(ctx: CanvasRenderingContext2D, points: readonly Vec2[], color: string, width = 1) {
   if (!points.length) return;
@@ -105,4 +111,97 @@ export function drawWire(ctx: CanvasRenderingContext2D, wire: WireDrawing, proje
     ctx.fillRect(mid.x - w / 2 - 3, mid.y - 12, w + 6, 11);
     text(ctx, wire.link.label, mid.x, mid.y - 6, 8, stroke, 'center');
   }
+}
+
+// ---------------------------------------------------------------------------
+// Cables: one thick jacket, a boot glyph at each furcation, thin legs
+// ---------------------------------------------------------------------------
+
+const GLYPH_LENGTH = 8;
+const GLYPH_HALF_WIDTH = 4.5;
+
+/** Boot at a fan's furcation: narrow on the jacket side, widening towards the legs. */
+function glyphPolygon(end: CableSchematicEnd, halfBase: number): Vec2[] {
+  const perp = { x: -end.dir.y, y: end.dir.x };
+  const back = add(end.anchor, scale(end.dir, 2));
+  const front = add(end.anchor, scale(end.dir, -GLYPH_LENGTH));
+  return [add(back, scale(perp, halfBase)), add(front, scale(perp, GLYPH_HALF_WIDTH)), add(front, scale(perp, -GLYPH_HALF_WIDTH)), add(back, scale(perp, -halfBase))];
+}
+
+function fillPolygon(ctx: CanvasRenderingContext2D, points: readonly Vec2[], color: string) {
+  if (!points.length) return;
+  ctx.beginPath();
+  ctx.moveTo(points[0]!.x, points[0]!.y);
+  for (const p of points.slice(1)) ctx.lineTo(p.x, p.y);
+  ctx.closePath();
+  ctx.fillStyle = color;
+  ctx.fill();
+}
+
+/** Open end of an unassigned leg / jacket. */
+function hollowCircle(ctx: CanvasRenderingContext2D, p: Vec2, color: string, r = 2.5) {
+  ctx.beginPath();
+  ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+  ctx.fillStyle = CANVAS_BG;
+  ctx.fill();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.2;
+  ctx.stroke();
+}
+
+function drawBadge(ctx: CanvasRenderingContext2D, badge: { pos: Vec2; text: string }, color: string) {
+  ctx.font = '7px ui-monospace, monospace';
+  const w = ctx.measureText(badge.text).width + 8, h = 11;
+  const x = badge.pos.x - w / 2, y = badge.pos.y - h / 2;
+  ctx.beginPath();
+  if (typeof ctx.roundRect === 'function') ctx.roundRect(x, y, w, h, 3);
+  else ctx.rect(x, y, w, h);
+  ctx.fillStyle = CANVAS_BG;
+  ctx.fill();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 0.8;
+  ctx.stroke();
+  text(ctx, badge.text, badge.pos.x, badge.pos.y + 0.5, 7, color, 'center');
+}
+
+export const cableColor = (d: CableSchematicDrawing): string => d.resolved.color || COLORS.wire;
+
+/** Jacket, fans (glyph + legs, dangling stubs end in a hollow circle, off-sheet stubs carry a label) and the 'NF · Mch' badge. */
+export function drawCable(ctx: CanvasRenderingContext2D, d: CableSchematicDrawing) {
+  const color = cableColor(d);
+  line(ctx, d.jacket, color, JACKET_WIDTH);
+  for (const end of [d.ends.A, d.ends.B]) {
+    if (end.kind === 'fan') {
+      for (const leg of end.legs) {
+        line(ctx, leg.points, color, WIRE_WIDTH);
+        const tip = leg.points.at(-1)!;
+        if (leg.state !== 'pin') hollowCircle(ctx, tip, color);
+        if (leg.state === 'offSheet' && leg.offSheetLabel) text(ctx, leg.offSheetLabel, tip.x + 4, tip.y - 5, 6.5, color);
+      }
+      fillPolygon(ctx, glyphPolygon(end, JACKET_WIDTH / 2), color);
+    } else if (end.kind === 'dangling') {
+      hollowCircle(ctx, end.anchor, color);
+    } else if (end.kind === 'offSheet' && end.offSheetLabel) {
+      text(ctx, end.offSheetLabel, end.anchor.x + 4, end.anchor.y - 5, 7, color);
+    }
+  }
+  drawBadge(ctx, d.badge, color);
+}
+
+/**
+ * Glow for a selected or hovered cable: the jacket (unless `jacket` is
+ * false), the glyphs and the given legs ('all', or a set of `legKey`s).
+ * The badge is redrawn on top so the glow, which sits on the overlay
+ * layer above the wires, does not run through its label.
+ */
+export function drawCableHighlight(ctx: CanvasRenderingContext2D, d: CableSchematicDrawing, color: string, legs: 'all' | ReadonlySet<string>, jacket = true) {
+  if (jacket) line(ctx, d.jacket, color, JACKET_WIDTH + 1.6);
+  for (const end of [d.ends.A, d.ends.B]) {
+    if (end.kind !== 'fan') continue;
+    if (jacket) fillPolygon(ctx, glyphPolygon(end, JACKET_WIDTH / 2 + 0.8), color);
+    for (const leg of end.legs) {
+      if (legs === 'all' || legs.has(legKey(end.side, leg.leg))) line(ctx, leg.points, color, WIRE_WIDTH + 1.3);
+    }
+  }
+  if (jacket) drawBadge(ctx, d.badge, color);
 }

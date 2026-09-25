@@ -116,6 +116,17 @@ export function redressRoutesOf(draft: Project, componentId: Id): Id[] {
     if (link.b.componentId === componentId) hit = routing.onEndpointMoved(draft, link.id, 'b') || hit;
     if (hit) touched.push(link.id);
   }
+  // A cable's jacket route is keyed by the cable id and dressed from the side whose legs sit on the device;
+  // its legs are derived (furcation → port), so only the jacket end needs re-squaring.
+  for (const cable of draft.cables ?? []) {
+    if (!draft.routes[cable.id]) continue;
+    let hit = false;
+    for (const side of ['A', 'B'] as const) {
+      if (!cable.plugs.some((p) => p.side === side && p.componentId === componentId)) continue;
+      hit = routing.onEndpointMoved(draft, cable.id, side === 'A' ? 'a' : 'b') || hit;
+    }
+    if (hit) touched.push(cable.id);
+  }
   return touched;
 }
 

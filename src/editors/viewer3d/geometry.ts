@@ -4,19 +4,21 @@ import { indexProject } from '@/model/query';
 import { portPlacement, portWorldPos, rackCenter, rackFloorRect, rackLocalToFloor, rackTopMm, routePath3d, U_MM } from '@/model/routing';
 import type { Project, RoutingLayer, SelectionItem, Vec3 } from '@/model/types';
 import { unionRects } from '@/editors/layout/viewport';
+import { buildInstalledCable3d, PLATE_MM, type InstalledCable3d } from './cables3d';
 
 export type V3 = [number, number, number];
 export interface BoxPart { target: SelectionItem; position: V3; size: V3; rotation: number; color: string }
 export interface CablePart { id: string; points: V3[]; radius: number; bendRadius: number; color: string; layers: RoutingLayer[]; routed: boolean }
 export const metres = (p: Vec3): V3 => [p.x / 1000, p.y / 1000, p.z / 1000];
-/** Thickness of a patch-panel faceplate standing proud of each face of a patch-frame wall, mm. */
-const PLATE_MM = 10;
 
 /** Scene data is independent of React/WebGL and shares the model's port/path math. */
 export function buildPhysicalScene(project: Project) {
   const idx = indexProject(project);
   const frames: BoxPart[] = [], devices: BoxPart[] = [], ports: BoxPart[] = [], doors: BoxPart[] = [], accessories: BoxPart[] = [];
   const labels: { id: string; text: string; position: V3 }[] = [];
+  // An installed cable draws its own jacket, boot and legs, so the links it owns are drawn neither as airwires nor as pigtails.
+  const installed: InstalledCable3d[] = (project.cables ?? []).flatMap((c) => { const s = buildInstalledCable3d(project, c); return s ? [s] : []; });
+  const owned = new Set(installed.map((s) => s.id));
   for (const rack of project.racks) {
     const target: SelectionItem = { kind: 'rack', id: rack.id }, top = rackTopMm(rack), rotation = -rack.rotationDeg * Math.PI / 180;
     const part = (across: number, y: number, depth: number, width: number, height: number, length: number, color = '#52687b'): BoxPart => {
@@ -73,11 +75,13 @@ export function buildPhysicalScene(project: Project) {
         if (!used) continue;
         // The "fiber in" cue: a 70 mm pigtail stub in the cable colour, leaving the faceplate and pointing away from its face.
         const link = idx.linksOf(c.id).find((l) => (l.a.componentId === c.id && l.a.portId === port.id) || (l.b.componentId === c.id && l.b.portId === port.id));
+        if (link?.cableId && owned.has(link.cableId)) continue;
         ports.push({ ...part(across, info.elevationMm, out(PLATE_MM + 35), 6, 6, 70, (link && idx.cableOf(link)?.color) ?? '#66ead3'), target: device });
       }
     }
   }
   const cables: CablePart[] = project.links.flatMap((link) => {
+    if (link.cableId && owned.has(link.cableId)) return [];
     const route = project.routes[link.id], path = route && routePath3d(project, link.id), cable = idx.cableOf(link);
     const a = portWorldPos(project, link.a.componentId, link.a.portId), b = portWorldPos(project, link.b.componentId, link.b.portId);
     if (!a || !b) return [];
@@ -86,7 +90,7 @@ export function buildPhysicalScene(project: Project) {
   const rect = unionRects([...project.racks.map(rackFloorRect), ...project.trays.filter((t) => t.points.length).map((t) => boundsOf(t.points))]) ?? boundsOf(project.room.outline);
   const center: V3 = [(rect.x + rect.width / 2) / 1000, 1, (rect.y + rect.height / 2) / 1000];
   const span = Math.max(2.5, rect.width / 1000, rect.height / 1000, project.room.ceilingMm / 1000);
-  return { frames, devices, ports, doors, accessories, labels, cables, center, span };
+  return { frames, devices, ports, doors, accessories, labels, cables, installed, center, span };
 }
 
 /** Clip each grid line to the room polygon, including concave outlines. */

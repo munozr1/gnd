@@ -425,7 +425,10 @@ export interface RouteSegment {
 }
 
 export interface Route {
+  /** The `Project.routes` key: the link id, or the cable id when `owner === 'cable'` (the route is then the cable's jacket). */
   linkId: Id;
+  /** Who the route belongs to; undefined means 'link'. See src/model/routing/owner.ts. */
+  owner?: 'link' | 'cable';
   aRack: InRackPath;
   bRack: InRackPath;
   /**

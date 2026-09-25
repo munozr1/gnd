@@ -20,8 +20,8 @@ import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator,
 import { Input } from '@/ui/Input';
 import { toast } from '@/ui/Toast';
 import { Toolbar } from '@/ui/Toolbar';
-import { COLORS, drawDevice, drawSymbols, drawWire, line, pinKey } from './drawing';
-import { boxSelection, buildScene, hitItem, hitScene, selectionBounds, selectionSheet, type Hit } from './scene';
+import { COLORS, drawCable, drawCableHighlight, drawDevice, drawSymbols, drawWire, line, pinKey } from './drawing';
+import { boxSelection, buildScene, hitItem, hitScene, hoverLegs, selectedCables, selectionBounds, selectionSheet, type Hit } from './scene';
 import { DEFAULT_VIEWPORT, fitRect, screenToWorld, wheelZoomFactor, worldToScreen, zoomAt, zoomStep, type Viewport } from './viewport';
 
 type Gesture =
@@ -78,8 +78,11 @@ export function SchematicEditor() {
   const paintSymbols = useCallback((context: Context) => drawSymbols(context._context, scene, displayProject, dimmedPins), [scene, displayProject, dimmedPins]);
   const paintWires = useCallback((context: Context) => {
     for (const wire of scene.wires) drawWire(context._context, wireMove?.id === wire.link.id ? { ...wire, points: wireMove.points } : wire, displayProject);
+    for (const cable of scene.cables) drawCable(context._context, cable);
   }, [scene, displayProject, wireMove]);
   const selected = useMemo(() => new Set(selection.flatMap((s) => 'id' in s ? [`${s.kind}:${s.id}`] : [])), [selection]);
+  // A selected cable glows whole; so does the cable that owns a selected link (e.g. one revealed from the issues drawer).
+  const litCables = useMemo(() => selectedCables(scene, selection), [scene, selection]);
   const activeIds = selection.flatMap((s) => s.kind === 'component' && idx.component(s.id)?.sch.sheetId === sheetId ? [s.id] : []);
   const cancel = useCallback(() => {
     gesture.current = null;
@@ -160,6 +163,7 @@ export function SchematicEditor() {
       bind('all', 'mod+a', 'Select sheet contents', () => store.getState().select([
         ...scene.devices.map(({ component }) => ({ kind: 'component' as const, id: component.id })),
         ...scene.wires.map(({ link }) => ({ kind: 'link' as const, id: link.id })),
+        ...scene.cables.map(({ cable }) => ({ kind: 'cable' as const, id: cable.id })),
         ...scene.sheets.map(({ sheet }) => ({ kind: 'sheet' as const, id: sheet.id })),
       ])),
       bind('cancel', 'escape', 'Cancel tool', () => { if (store.getState().ui.schematic.cabling) finishCabling(); else cancel(); }),
@@ -284,6 +288,15 @@ export function SchematicEditor() {
   const startLayout = wireStart && componentLayout(project, wireStart.componentId);
   const startPin = startLayout && wireStart ? pinEndpoint(startLayout, wireStart.portId) : null;
   const targetPin = hover?.kind === 'pin' ? hover : null;
+  const hoveredCable = useMemo(() => {
+    if (hover?.kind !== 'cable') return null;
+    const d = scene.cables.find((c) => c.cable.id === hover.id);
+    if (!d) return null;
+    if (hover.part !== 'leg') return `${d.cable.label} · ${d.resolved.displayName}`;
+    const leg = d.ends[hover.side].legs.find((l) => l.leg === hover.leg);
+    const label = (hover.side === 'A' ? d.resolved.sideA : d.resolved.sideB).legs[hover.leg]?.label ?? String(hover.leg + 1);
+    return `${d.cable.label} · ${d.resolved.displayName} · side ${hover.side} leg ${label} → ${leg?.ref ? idx.endLabel(leg.ref) : 'unassigned'}`;
+  }, [hover, scene, idx]);
   const wireInvalid = !!targetPin && ((!!wireStart && (sameEnd(targetPin.end, wireStart) || !idx.isPortFree(targetPin.end.componentId, targetPin.end.portId))) || (!!dimmedPins && dimmedPins.has(pinKey(targetPin.end.componentId, targetPin.end.portId))));
   const labelWire = label && scene.wires.find((w) => w.link.id === label.id);
   const labelPos = labelWire ? worldToScreen(viewport, wireMidpoint(labelWire.points)) : { x: 24, y: 24 };
@@ -305,7 +318,7 @@ export function SchematicEditor() {
       </Toolbar>
       <div className="flex h-7 shrink-0 items-center gap-1 border-b border-border px-2 text-xs text-fg-muted" aria-label="Sheet path">
         {sheetAncestry(project, sheetId).map((s, i) => <span key={s.id}>{i > 0 && ' / '}<button className="px-1 hover:text-fg" onClick={() => store.getState().setActiveSheet(s.id)}>{s.name}</button></span>)}
-        <span className="ml-auto">{scene.devices.length} devices · {scene.wires.length} links · {Math.round(viewport.scale * 100)}%</span>
+        <span className="ml-auto">{scene.devices.length} devices · {scene.wires.length} links{scene.cables.length > 0 && ` · ${scene.cables.length} cables`} · {Math.round(viewport.scale * 100)}%</span>
       </div>
       <ContextMenu><ContextMenuTrigger asChild>
         <div ref={host} data-testid="schematic-canvas" data-viewport={JSON.stringify(viewport)} tabIndex={0} role="region" aria-label="Schematic canvas"
@@ -330,8 +343,10 @@ export function SchematicEditor() {
               for (const [key, r] of scene.itemBounds) {
                 if (!selected.has(key)) continue;
                 if (key.startsWith('link:')) { const wire = scene.wires.find((w) => key === `link:${w.link.id}`); if (wire) drawWire(ctx, wireMove?.id === wire.link.id ? { ...wire, points: wireMove.points } : wire, displayProject, COLORS.accent, 2.5); }
-                else { ctx.strokeStyle = COLORS.accent; ctx.lineWidth = 1.5 / viewport.scale; ctx.strokeRect(r.x, r.y, r.width, r.height); }
+                else if (!key.startsWith('cable:')) { ctx.strokeStyle = COLORS.accent; ctx.lineWidth = 1.5 / viewport.scale; ctx.strokeRect(r.x, r.y, r.width, r.height); }
               }
+              for (const cable of scene.cables) if (litCables.has(cable.cable.id)) drawCableHighlight(ctx, cable, COLORS.accent, 'all');
+              if (hover?.kind === 'cable' && !gesture.current) { const cable = scene.cables.find((c) => c.cable.id === hover.id); if (cable) drawCableHighlight(ctx, cable, COLORS.hover, hoverLegs(cable, hover)); }
               if (hover?.kind === 'pin') { ctx.beginPath(); ctx.arc(hover.pos.x, hover.pos.y, 4, 0, Math.PI * 2); ctx.strokeStyle = wireInvalid ? '#f87171' : COLORS.accent; ctx.lineWidth = 1.5; ctx.stroke(); }
               if (startPin) {
                 const end = targetPin?.pos ?? snapVec(cursor, 10), dir = targetPin?.dir ?? { x: -startPin.dir.x, y: -startPin.dir.y };
@@ -344,6 +359,7 @@ export function SchematicEditor() {
           {!scene.devices.length && !scene.sheets.length && !ui.placing && <div className="pointer-events-none absolute inset-0 flex items-center justify-center"><div className="text-center text-fg-muted"><p className="mb-2 text-base text-fg">Start your network topology</p><p>Press A or choose a device from the library.</p><p className="mt-1 text-xs">Connect its ports, then update the physical layout.</p></div></div>}
           <CablingHud />
           {hover?.kind === 'pin' && !gesture.current && <div className="pointer-events-none absolute bottom-2 left-2 rounded border border-border bg-panel px-2 py-1 text-xs">{idx.endLabel(hover.end)} · {idx.catalog.transceiver(idx.component(hover.end.componentId)?.optics[hover.end.portId])?.name ?? 'No optic assigned'}</div>}
+          {hover?.kind === 'cable' && !gesture.current && hoveredCable && <div data-testid="cable-hover" className="pointer-events-none absolute bottom-2 left-2 rounded border border-border bg-panel px-2 py-1 text-xs">{hoveredCable}</div>}
           {label && <form className="absolute z-10 rounded border border-accent bg-panel p-1 shadow-lg" style={{ left: Math.max(0, Math.min(size.width - 230, labelPos.x)), top: Math.max(0, Math.min(size.height - 40, labelPos.y)) }} onPointerDown={(e) => e.stopPropagation()} onSubmit={(e) => { e.preventDefault(); execute(commands.setLinkLabel(label.id, label.text.trim())); setLabel(null); }}>
             <Input autoFocus aria-label="Wire label" value={label.text} onChange={(e) => setLabel({ ...label, text: e.target.value })} onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); setLabel(null); } }} />
           </form>}
@@ -361,6 +377,10 @@ export function SchematicEditor() {
             <ContextMenuItem onSelect={() => execute(commands.setLinkCable(one.id, null))}>Unassigned</ContextMenuItem>
             {idx.catalog.catalog.cables.map((c) => <ContextMenuItem key={c.id} onSelect={() => execute(commands.setLinkCable(one.id, c.id))}>{c.name}</ContextMenuItem>)}
           </ContextMenuSubContent></ContextMenuSub>
+        </>}
+        {one?.kind === 'cable' && <>
+          <ContextMenuItem onSelect={() => store.getState().revealSelection([one], 'layout')}>Show in layout</ContextMenuItem>
+          <ContextMenuItem onSelect={() => store.getState().revealSelection([one], 'viewer3d')}>Show in 3D</ContextMenuItem>
         </>}
         {one?.kind === 'sheet' && <ContextMenuItem onSelect={() => store.getState().setActiveSheet(one.id)}>Enter sheet</ContextMenuItem>}
         <ContextMenuItem disabled={!selection.length} onSelect={remove}>Delete selection</ContextMenuItem>
