@@ -117,6 +117,45 @@ export interface TransceiverDef {
   lanes: number;
 }
 
+export type FiberType = 'OS2' | 'OM3' | 'OM4' | 'OM5';
+
+/**
+ * Fiber polarity method: 'A' straight, 'B' reversed within each multi-fiber
+ * connector, 'C' pair-flipped. See src/model/cables/strandMap.ts for the
+ * exact rule, including how a duplex cord is always A-to-B.
+ */
+export type CablePolarity = 'A' | 'B' | 'C';
+
+/**
+ * One end of a fiber cable as STORED: the connector catalog id (src/catalog/
+ * connectors.json) plus optional per-leg label / colour overrides by leg
+ * index. The legs themselves are DERIVED from fiberCount and the connector's
+ * fibers-per-leg (`deriveSides`), never stored.
+ */
+export interface CableSideDef {
+  connector: string;
+  legLabels?: string[];
+  legColors?: string[];
+}
+
+/** One fiber of a cable: the (leg, position) it lands on at each end. Legs are 0-based, positions 1-based. */
+export interface StrandLink {
+  a: { leg: number; pos: number };
+  b: { leg: number; pos: number };
+}
+
+/**
+ * A cable type. Fiber cables carry the `fiberCount` / `fiberType` / `sideA` /
+ * `sideB` / `polarity` fields, from which legs, kind (straight vs trunk),
+ * channels and the strand map are derived on demand by src/model/cables.
+ *
+ * The legacy fields `media`, `mediaClass`, `endA`, `endB`, `color`,
+ * `diameterMm` and `breakout` STAY POPULATED in the old vocabulary ('OM4',
+ * 'LC', 'MPO-12', fanout) because the ERC connector / media rules, BOM and
+ * exports read them; for a fiber cable they are regenerated from the fiber
+ * fields by `legacyFieldsFor` and the catalog keeps them in lock-step.
+ * Copper, DAC and AOC cables have only the legacy fields.
+ */
 export interface CableDef {
   id: string;
   name: string;
@@ -134,6 +173,19 @@ export interface CableDef {
   breakout?: { fanout: number };
   /** For DAC/AOC: the virtual transceiver that fills both cages. */
   integrated?: { formFactor: PortType; speedGbps: number; reachM: number };
+
+  // --- Fiber cable definition (see src/model/cables) ---
+  /** Number of fibers (strands) in the cable: 2, 8, 12, 16, 24, 32, 48, 72, 96, 144 or custom (even). */
+  fiberCount?: number;
+  fiberType?: FiberType;
+  sideA?: CableSideDef;
+  sideB?: CableSideDef;
+  /** Defaults to 'B' when either side is a multi-fiber connector, else 'A'. */
+  polarity?: CablePolarity;
+  /** Present ONLY when the user customised it; otherwise derived from the sides + polarity. */
+  strandMap?: StrandLink[];
+  /** Jacket-to-legs breakout length for a trunk; default 0.5 m. */
+  breakoutLengthM?: number;
 }
 
 export type TrayKind = 'fiber-runway' | 'ladder' | 'basket';
