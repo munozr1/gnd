@@ -7,7 +7,7 @@ import { indexProject, type ProjectIndex } from '@/model/query';
 import { sheetPath } from '@/model/schematic/hierarchy';
 import { linkLengthM, type LinkLength } from '@/model/routing/length';
 import { routePath3d } from '@/model/routing/path3d';
-import type { Face, Id, Link, LinkEnd, Project, RoutingLayer } from '@/model/types';
+import type { CableDef, Face, Id, Link, LinkEnd, Project, RoutingLayer } from '@/model/types';
 
 const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
 
@@ -48,13 +48,17 @@ export interface EndInfo {
 }
 
 export function endInfo(project: Project, link: Link, end: LinkEnd, idx: ProjectIndex = indexProject(project)): EndInfo {
+  return portInfo(project, end, idx, idx.cableOf(link));
+}
+
+/** `endInfo` for a port that no link names (a cable leg): `cableDef` only decides whether an empty cage reads 'integrated'. */
+export function portInfo(project: Project, end: LinkEnd, idx: ProjectIndex = indexProject(project), cableDef?: CableDef): EndInfo {
   const c = idx.component(end.componentId);
   const ref = c?.ref ?? end.componentId;
   const lane = end.lane ?? null;
   const portLabel = lane === null ? end.portId : `${end.portId}.${lane}`;
   const assigned = c ? idx.catalog.transceiver(c.optics[end.portId]) : undefined;
-  const cable = idx.cableOf(link);
-  const optic = assigned ? assigned.name : cable?.integrated ? 'integrated' : '';
+  const optic = assigned ? assigned.name : cableDef?.integrated ? 'integrated' : '';
   const placement = c ? idx.placement(c.id) : undefined;
   const rack = placement?.rackId ? idx.rack(placement.rackId) : undefined;
   const u = rack && placement?.uPosition !== null && placement?.uPosition !== undefined ? placement.uPosition : null;
@@ -99,6 +103,16 @@ export function linkSheets(project: Project, link: Link, idx: ProjectIndex = ind
     if (s && !out.includes(s)) out.push(s);
   }
   return out;
+}
+
+/** Whether a link is realised by an installed cable that still exists (the lists fold such links into the cable's rows). */
+export function ownedByCable(link: Link, idx: ProjectIndex): boolean {
+  return link.cableId !== undefined && idx.cable(link.cableId) !== undefined;
+}
+
+/** `sortedLinks` without the links installed cables own — the rows the plain-link lists print. */
+export function plainLinks(project: Project, idx: ProjectIndex = indexProject(project)): Link[] {
+  return sortedLinks(project, idx).filter((l) => !ownedByCable(l, idx));
 }
 
 /** Links in a stable, human order: by label (natural), then by the A end. */

@@ -53,7 +53,7 @@ export function createProject(name = 'Untitled datacenter', now = new Date().toI
   return {
     id: newId(),
     name,
-    version: 1,
+    version: 2,
     rev: 'A',
     createdAt: now,
     updatedAt: now,

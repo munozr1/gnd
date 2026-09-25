@@ -7,7 +7,7 @@ KiCad-style browser app for designing datacenter networks: **schematic** (logica
 ```bash
 npm run dev          # vite on :5173 (also .claude/launch.json "dev")
 npm run check        # tsc -b && vitest run && vite build  — must be green before you stop
-npm test             # vitest run (60 files / 630+ tests)
+npm test             # vitest run (89 files / 959 tests)
 npm run test:e2e     # playwright (chromium installed; specs live in e2e/)
 npm run gen:catalog  # regenerate src/catalog/*.json from scripts/gen-catalog.ts
 ```

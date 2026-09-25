@@ -507,7 +507,8 @@ export interface SyncState {
 export interface Project {
   id: Id;
   name: string;
-  version: 1;
+  /** Schema version written by this build; see src/io/persistence/migrations.ts (v2 = configurable fiber cables). */
+  version: 1 | 2;
   rev: string;
   createdAt: string;
   updatedAt: string;
