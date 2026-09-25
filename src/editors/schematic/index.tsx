@@ -8,6 +8,8 @@ import { snapVec, type Rect } from '@/model/geometry';
 import { indexProject } from '@/model/query';
 import { autoWirePoints, componentLayout, dragWireSegment, moveComponents as previewMove, pinEndpoint, sheetAncestry, symbolLayout, wireMidpoint } from '@/model/schematic';
 import type { LinkEnd, Vec2 } from '@/model/types';
+import { autoFillCurrent, cablingStatus, dimmedPinsFor, finishCabling, plugCurrent } from '@/panels/cables/cabling';
+import { CablingHud } from '@/panels/cables/CablingHud';
 import { execute } from '@/panels/schematic/common';
 import { useStatusBarWriter } from '@/panels/shell/StatusBarContext';
 import { runChecks } from '@/panels/shell/useChecks';
@@ -18,7 +20,7 @@ import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator,
 import { Input } from '@/ui/Input';
 import { toast } from '@/ui/Toast';
 import { Toolbar } from '@/ui/Toolbar';
-import { COLORS, drawDevice, drawSymbols, drawWire, line } from './drawing';
+import { COLORS, drawDevice, drawSymbols, drawWire, line, pinKey } from './drawing';
 import { boxSelection, buildScene, hitItem, hitScene, selectionBounds, selectionSheet, type Hit } from './scene';
 import { DEFAULT_VIEWPORT, fitRect, screenToWorld, wheelZoomFactor, worldToScreen, zoomAt, zoomStep, type Viewport } from './viewport';
 
@@ -54,6 +56,14 @@ export function SchematicEditor() {
   const space = useRef(false);
   const panned = useRef(false);
   const status = useStatusBarWriter();
+  // ---- Cable tool: while ui.schematic.cabling is set, pin clicks plug the current leg (see src/panels/cables/cabling.ts) ----
+  const cabling = ui.cabling;
+  const dimmedPins = useMemo(() => (cabling ? dimmedPinsFor(project, cabling, sheetId) : undefined), [project, cabling, sheetId]);
+  const cablePinClick = (end: LinkEnd, shiftKey: boolean) => (shiftKey ? autoFillCurrent(end) : plugCurrent(end));
+  // Enter finishes; the keydown that picked a definition in a (portaled) select or menu is not that Enter.
+  useEffect(() => (cabling ? registerShortcut({ id: 'schematic.cable-finish', keys: 'enter', description: 'Finish cable', editor: 'schematic', when: () => store.getState().ui.activeDialog === null,
+    handler: (e) => { if (!(e.target as HTMLElement | null)?.closest?.('[role="listbox"],[role="option"],[role="menu"],[role="dialog"]')) finishCabling(); } }) : undefined), [cabling]);
+  // ---- end cable tool ----
   const displayProject = useMemo(() => {
     if (!move && !sheetMove) return project;
     return produce(project, (draft) => {
@@ -65,7 +75,7 @@ export function SchematicEditor() {
     });
   }, [project, move, sheetMove]);
   const scene = useMemo(() => buildScene(displayProject, sheetId), [displayProject, sheetId]);
-  const paintSymbols = useCallback((context: Context) => drawSymbols(context._context, scene, displayProject), [scene, displayProject]);
+  const paintSymbols = useCallback((context: Context) => drawSymbols(context._context, scene, displayProject, dimmedPins), [scene, displayProject, dimmedPins]);
   const paintWires = useCallback((context: Context) => {
     for (const wire of scene.wires) drawWire(context._context, wireMove?.id === wire.link.id ? { ...wire, points: wireMove.points } : wire, displayProject);
   }, [scene, displayProject, wireMove]);
@@ -121,12 +131,17 @@ export function SchematicEditor() {
     return () => { window.removeEventListener('keydown', down); window.removeEventListener('keyup', up); window.removeEventListener('blur', blur); status.clear(); };
   }, [cancel, status]);
   useEffect(() => {
-    status.set({ mode: ui.placing ? 'Place symbol' : wireStart ? 'Wire: choose destination' : ui.tool,
-      message: ui.placing ? 'Click to place · Esc to finish' : 'A add · W wire · R rotate · Space-drag pan · Scroll to zoom' });
-  }, [ui.placing, ui.tool, wireStart, status]);
+    status.set({ mode: cabling ? 'Connect cable' : ui.placing ? 'Place symbol' : wireStart ? 'Wire: choose destination' : ui.tool,
+      message: cabling ? cablingStatus(project, cabling) : ui.placing ? 'Click to place · Esc to finish' : 'A add · W wire · R rotate · Space-drag pan · Scroll to zoom' });
+  }, [ui.placing, ui.tool, wireStart, status, cabling, project]);
 
   const editLabel = (id: string) => { setLabel({ id, text: idx.link(id)?.label ?? '' }); store.getState().patchSchematic({ tool: 'select' }); };
-  const remove = () => { if (selection.length) execute(commands.deleteSelection(selection)); cancel(); };
+  const remove = () => {
+    const cableIds = selection.flatMap((s) => (s.kind === 'cable' ? [s.id] : []));
+    if (cableIds.length) execute(commands.deleteCables(cableIds));
+    if (selection.length > cableIds.length) execute(commands.deleteSelection(selection));
+    cancel();
+  };
   const pickup = () => {
     if (!activeIds.length) return;
     gesture.current = { kind: 'move', ids: activeIds, start: cursor, pickup: true };
@@ -147,7 +162,7 @@ export function SchematicEditor() {
         ...scene.wires.map(({ link }) => ({ kind: 'link' as const, id: link.id })),
         ...scene.sheets.map(({ sheet }) => ({ kind: 'sheet' as const, id: sheet.id })),
       ])),
-      bind('cancel', 'escape', 'Cancel tool', cancel),
+      bind('cancel', 'escape', 'Cancel tool', () => { if (store.getState().ui.schematic.cabling) finishCabling(); else cancel(); }),
       bind('fit', 'home', 'Fit schematic', () => store.getState().requestViewport('schematic', { kind: 'fit' })),
     ];
     return () => offs.forEach((off) => off());
@@ -199,6 +214,7 @@ export function SchematicEditor() {
     }
     const hit = hitScene(scene, point, Math.min(5, 7 / viewport.scale));
     if (hit?.kind === 'stub') { execute(commands.toggleExpandedPins(hit.id)); return; }
+    if (cabling) { if (hit?.kind === 'pin') cablePinClick(hit.end, e.shiftKey); return; }
     if (hit?.kind === 'pin') {
       if (wireStart) { finishConnection(hit.end); return; }
       if (!idx.isPortFree(hit.end.componentId, hit.end.portId)) { toast('This port is already connected.', { tone: 'warning' }); return; }
@@ -268,7 +284,7 @@ export function SchematicEditor() {
   const startLayout = wireStart && componentLayout(project, wireStart.componentId);
   const startPin = startLayout && wireStart ? pinEndpoint(startLayout, wireStart.portId) : null;
   const targetPin = hover?.kind === 'pin' ? hover : null;
-  const wireInvalid = !!targetPin && !!wireStart && (sameEnd(targetPin.end, wireStart) || !idx.isPortFree(targetPin.end.componentId, targetPin.end.portId));
+  const wireInvalid = !!targetPin && ((!!wireStart && (sameEnd(targetPin.end, wireStart) || !idx.isPortFree(targetPin.end.componentId, targetPin.end.portId))) || (!!dimmedPins && dimmedPins.has(pinKey(targetPin.end.componentId, targetPin.end.portId))));
   const labelWire = label && scene.wires.find((w) => w.link.id === label.id);
   const labelPos = labelWire ? worldToScreen(viewport, wireMidpoint(labelWire.points)) : { x: 24, y: 24 };
   const one = selection.length === 1 ? selection[0] : undefined;
@@ -293,7 +309,7 @@ export function SchematicEditor() {
       </div>
       <ContextMenu><ContextMenuTrigger asChild>
         <div ref={host} data-testid="schematic-canvas" data-viewport={JSON.stringify(viewport)} tabIndex={0} role="region" aria-label="Schematic canvas"
-          className="relative min-h-0 flex-1 overflow-hidden outline-none" style={{ touchAction: 'none', cursor: ui.placing || ui.tool === 'wire' ? 'crosshair' : 'default', backgroundImage: 'radial-gradient(circle, #304052 0.7px, transparent 0.8px)', backgroundSize: `${grid}px ${grid}px`, backgroundPosition: `${viewport.x}px ${viewport.y}px` }}
+          className="relative min-h-0 flex-1 overflow-hidden outline-none" style={{ touchAction: 'none', cursor: ui.placing || ui.tool === 'wire' || cabling ? 'crosshair' : 'default', backgroundImage: 'radial-gradient(circle, #304052 0.7px, transparent 0.8px)', backgroundSize: `${grid}px ${grid}px`, backgroundPosition: `${viewport.x}px ${viewport.y}px` }}
           onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={cancel}
           onPointerLeave={() => { setHover(null); store.getState().setHovered(null); }}
           onContextMenuCapture={(e) => {
@@ -326,6 +342,7 @@ export function SchematicEditor() {
             }} /></Layer>
           </Stage>}
           {!scene.devices.length && !scene.sheets.length && !ui.placing && <div className="pointer-events-none absolute inset-0 flex items-center justify-center"><div className="text-center text-fg-muted"><p className="mb-2 text-base text-fg">Start your network topology</p><p>Press A or choose a device from the library.</p><p className="mt-1 text-xs">Connect its ports, then update the physical layout.</p></div></div>}
+          <CablingHud />
           {hover?.kind === 'pin' && !gesture.current && <div className="pointer-events-none absolute bottom-2 left-2 rounded border border-border bg-panel px-2 py-1 text-xs">{idx.endLabel(hover.end)} · {idx.catalog.transceiver(idx.component(hover.end.componentId)?.optics[hover.end.portId])?.name ?? 'No optic assigned'}</div>}
           {label && <form className="absolute z-10 rounded border border-accent bg-panel p-1 shadow-lg" style={{ left: Math.max(0, Math.min(size.width - 230, labelPos.x)), top: Math.max(0, Math.min(size.height - 40, labelPos.y)) }} onPointerDown={(e) => e.stopPropagation()} onSubmit={(e) => { e.preventDefault(); execute(commands.setLinkLabel(label.id, label.text.trim())); setLabel(null); }}>
             <Input autoFocus aria-label="Wire label" value={label.text} onChange={(e) => setLabel({ ...label, text: e.target.value })} onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); setLabel(null); } }} />

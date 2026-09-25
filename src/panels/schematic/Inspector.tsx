@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import * as commands from '@/commands';
 import { compatibleFootprints, compatibleOptics, usedPortIds } from '@/model/schematic';
+import { CableInspector } from '@/panels/cables/CableInspector';
 import { store, useProject, useProjectIndex, useSelection } from '@/store';
 import { Button } from '@/ui/Button';
 import { Select } from '@/ui/Select';
@@ -65,5 +66,7 @@ export function SchematicInspector() {
       <Button onClick={() => store.getState().setActiveSheet(sheet.id)}>Enter sheet</Button>
     </Section>;
   }
+  // A cable instance (the connecting flow) has its own inspector; sharing this panel keeps the right dock to one Inspector.
+  if (item.kind === 'cable') return <CableInspector />;
   return <Section title="Selection"><p className="text-xs text-fg-muted">Select a schematic device or link.</p></Section>;
 }

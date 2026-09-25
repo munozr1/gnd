@@ -15,6 +15,7 @@
  * schematic keeps its rack slot until its remove-component is applied, so
  * undoing the deletion restores it in place.
  */
+import { unplugComponents } from '@/model/cables/instances';
 import { createPlacement } from '@/model/factories';
 import { ProjectIndex } from '@/model/query';
 import type { Id, LinkEnd, Project, SyncChange } from '@/model/types';
@@ -66,6 +67,8 @@ export function applySyncPlan(draft: Project, changes: readonly SyncChange[]): A
         if (draft.placements.some((p) => p.componentId === id)) {
           draft.placements = draft.placements.filter((p) => p.componentId !== id);
         }
+        // A cable leg still pointing at the vanished device (older files) becomes unassigned.
+        unplugComponents(draft, [id]);
         delete draft.syncState.components[id];
         applied++;
         break;

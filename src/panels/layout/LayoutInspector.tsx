@@ -27,6 +27,7 @@ const KIND_LABEL: Record<SelectionItem['kind'], string> = {
   sheet: 'sheet',
   keepout: 'keep-out',
   accessory: 'accessory',
+  cable: 'cable',
 };
 
 function MultiSelection({ selection }: { selection: readonly SelectionItem[] }) {

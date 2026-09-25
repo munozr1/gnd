@@ -267,6 +267,41 @@ export interface Link {
   label?: string;
   /** Schematic wire geometry only (intermediate elbow points, excluding pin ends). */
   sch: { wirePoints: Vec2[] };
+  /** Set when a `Cable` instance realises this link (one link per channel plugged at both ends); see src/model/cables/instances.ts. */
+  cableId?: Id;
+}
+
+// ---------------------------------------------------------------------------
+// Cable instances (see src/model/cables/instances.ts)
+// ---------------------------------------------------------------------------
+
+/**
+ * One leg of one end of an installed cable and the port it is plugged into.
+ * A cable always carries one entry per leg per side; `componentId` /
+ * `portId` are null while the leg is unassigned (allowed: a sketch).
+ */
+export interface CablePlug {
+  side: 'A' | 'B';
+  /** Leg index on that side, 0-based (see `deriveSides`). */
+  leg: number;
+  componentId: Id | null;
+  portId: string | null;
+}
+
+/**
+ * An installed cable: an instance of a `CableDef`. The cable OWNS its links:
+ * every channel whose fibers are plugged at both ends is realised as a plan
+ * `Link` carrying `link.cableId`, so ERC / DRC / F8 / exports keep working on
+ * links while renderers group them by cable to draw the jacket and fan-out.
+ */
+export interface Cable {
+  id: Id;
+  label: string;
+  cableDefId: string;
+  plugs: CablePlug[];
+  lengthM?: number;
+  /** Furcation (breakout) point per side on the floor plan, mm; pinned once the user drags it. */
+  furcation?: Partial<Record<'A' | 'B', { pos: Vec2; pinned: boolean }>>;
 }
 
 /** Hierarchical sheets: 'Root', 'Spine', 'Pod A'. */
@@ -421,7 +456,8 @@ export type IssueTarget =
   | { kind: 'rack'; id: Id }
   | { kind: 'route'; id: Id }
   | { kind: 'tray'; id: Id }
-  | { kind: 'sheet'; id: Id };
+  | { kind: 'sheet'; id: Id }
+  | { kind: 'cable'; id: Id };
 
 export interface Issue {
   id: string;
@@ -477,6 +513,8 @@ export interface Project {
   sheets: Sheet[];
   components: Component[];
   links: Link[];
+  /** Installed cable instances; each owns the links it realises (`Link.cableId`). */
+  cables: Cable[];
 
   // physical
   room: Room;
@@ -542,6 +580,7 @@ export type SelectionItem =
   | { kind: 'waypoint'; routeId: Id; segmentIndex: number; waypointId: Id }
   | { kind: 'sheet'; id: Id }
   | { kind: 'keepout'; id: Id }
-  | { kind: 'accessory'; id: Id };
+  | { kind: 'accessory'; id: Id }
+  | { kind: 'cable'; id: Id };
 
 export type EditorId = 'schematic' | 'layout' | 'viewer3d';

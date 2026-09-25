@@ -1,5 +1,9 @@
 import { nanoid } from 'nanoid';
+import { resolveCable } from './cables/resolve';
 import type {
+  Cable,
+  CableDef,
+  CablePlug,
   Component,
   Id,
   Link,
@@ -56,6 +60,7 @@ export function createProject(name = 'Untitled datacenter', now = new Date().toI
     sheets: [{ id: ROOT_SHEET_ID, name: 'Root', parentId: null }],
     components: [],
     links: [],
+    cables: [],
     room: defaultRoom(),
     racks: [],
     placements: [],
@@ -94,6 +99,22 @@ export function createLink(a: LinkEnd, b: LinkEnd, cableDefId: string | null = n
     ...(label !== undefined ? { label } : {}),
     sch: { wirePoints: [] },
   };
+}
+
+/**
+ * An installed cable of `def` with every leg unassigned: one plug per leg per
+ * side, derived from the definition's fiber count and connectors. Throws when
+ * the definition does not resolve (not a fiber cable, uneven split, …).
+ */
+export function createCable(def: CableDef, label: string): Cable {
+  const resolved = resolveCable(def);
+  if ('error' in resolved) throw new Error(`Cannot connect ${def.name || def.id}: ${resolved.error}`);
+  const plugs: CablePlug[] = [];
+  for (const side of ['A', 'B'] as const) {
+    const legs = side === 'A' ? resolved.sideA.legs : resolved.sideB.legs;
+    for (const leg of legs) plugs.push({ side, leg: leg.index, componentId: null, portId: null });
+  }
+  return { id: newId(), label, cableDefId: def.id, plugs };
 }
 
 export function createSheet(name: string, parentId: Id | null, pos?: Vec2): Sheet {

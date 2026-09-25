@@ -120,6 +120,8 @@ function normalizeV1(r: Raw, now: string): Project {
     sheets: sheets.length > 0 ? sheets : [{ id: ROOT_SHEET_ID, name: 'Root', parentId: null }],
     components,
     links,
+    // Cable instances arrived after v1 files were already in the wild; older files simply have none.
+    cables: optionalArray(r, 'cables'),
     room: { ...defaultRoom(), ...optionalObject(r, 'room') } as Project['room'],
     racks: optionalArray(r, 'racks'),
     placements: optionalArray(r, 'placements'),

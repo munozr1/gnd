@@ -3,7 +3,7 @@ import { wireMidpoint, worldSide } from '@/model/schematic';
 import type { Project, Vec2 } from '@/model/types';
 import type { DeviceDrawing, Scene, WireDrawing } from './scene';
 
-export const COLORS = { body: '#182331', border: '#4f6b82', text: '#dce6ef', muted: '#8298ae', accent: '#60b7ff', wire: '#67c9bc' };
+export const COLORS = { body: '#182331', border: '#4f6b82', text: '#dce6ef', muted: '#8298ae', accent: '#60b7ff', wire: '#67c9bc', dim: '#3a4858' };
 
 export function line(ctx: CanvasRenderingContext2D, points: readonly Vec2[], color: string, width = 1) {
   if (!points.length) return;
@@ -24,7 +24,14 @@ function text(ctx: CanvasRenderingContext2D, value: string, x: number, y: number
   else ctx.fillText(value, x, y);
 }
 
-export function drawDevice(ctx: CanvasRenderingContext2D, { component: c, layout }: DeviceDrawing, project: Project) {
+/**
+ * Pins the cable tool cannot plug the current leg into are drawn dimmed;
+ * keys are 'componentId/portId' (see src/panels/cables/cabling.ts).
+ */
+export type DimmedPins = ReadonlySet<string>;
+export const pinKey = (componentId: string, portId: string): string => `${componentId}/${portId}`;
+
+export function drawDevice(ctx: CanvasRenderingContext2D, { component: c, layout }: DeviceDrawing, project: Project, dimmedPins?: DimmedPins) {
   const idx = indexProject(project);
   const b = layout.bounds;
   ctx.fillStyle = COLORS.body;
@@ -40,7 +47,7 @@ export function drawDevice(ctx: CanvasRenderingContext2D, { component: c, layout
   text(ctx, idx.footprintOf(c)?.model ?? 'No model', b.x + b.width / 2, b.y + b.height - 5, 6.5, COLORS.muted, 'center', b.width - 12);
   for (const pin of layout.pins.values()) {
     const used = !idx.isPortFree(c.id, pin.portId);
-    const color = used ? COLORS.accent : COLORS.muted;
+    const color = dimmedPins?.has(pinKey(c.id, pin.portId)) ? COLORS.dim : used ? COLORS.accent : COLORS.muted;
     line(ctx, [pin.pos, pin.bodyPos], color);
     ctx.beginPath();
     ctx.arc(pin.pos.x, pin.pos.y, 1.8, 0, Math.PI * 2);
@@ -66,8 +73,8 @@ export function drawDevice(ctx: CanvasRenderingContext2D, { component: c, layout
   }
 }
 
-export function drawSymbols(ctx: CanvasRenderingContext2D, scene: Scene, project: Project) {
-  for (const device of scene.devices) drawDevice(ctx, device, project);
+export function drawSymbols(ctx: CanvasRenderingContext2D, scene: Scene, project: Project, dimmedPins?: DimmedPins) {
+  for (const device of scene.devices) drawDevice(ctx, device, project, dimmedPins);
   for (const { sheet, rect: r, pins } of scene.sheets) {
     ctx.fillStyle = '#1a2834';
     ctx.fillRect(r.x, r.y, r.width, r.height);

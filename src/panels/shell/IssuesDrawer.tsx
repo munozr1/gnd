@@ -32,6 +32,8 @@ export function selectionForTarget(target: IssueTarget): SelectionItem {
     case 'route':
       // Routes are keyed by link id; selecting the link highlights its route.
       return { kind: 'link', id: target.id };
+    case 'cable':
+      return { kind: 'cable', id: target.id };
   }
 }
 
@@ -90,6 +92,9 @@ export function targetLabels(issue: Issue): string {
         break;
       case 'sheet':
         labels.push(idx.project.sheets.find((sh) => sh.id === t.id)?.name ?? t.id);
+        break;
+      case 'cable':
+        labels.push(idx.cable(t.id)?.label ?? t.id);
         break;
     }
   }

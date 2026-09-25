@@ -11,8 +11,10 @@
  */
 export * as schematic from './schematic';
 export * as layout from './layout';
+export * as cables from './cables';
 export * from './schematic';
 export * from './layout';
+export * from './cables';
 export * from './base';
 export {
   buildCustomDevice,
@@ -40,6 +42,17 @@ export {
   type PlacementTarget,
   type URange,
 } from './placement';
+export {
+  addCableDef,
+  updateCableDef,
+  deleteCableDef,
+  buildCableDef,
+  cableDefIdFor,
+  defaultBendRadiusMm,
+  CUSTOM_CABLE_ID_PREFIX,
+  type FiberCableDefInput,
+  type CableDefPatch,
+} from './cableDefs';
 export {
   planPlaceByRule,
   matchRacks,

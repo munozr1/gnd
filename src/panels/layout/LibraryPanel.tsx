@@ -16,6 +16,7 @@ import { Button } from '@/ui/Button';
 import { NumberInput } from '@/ui/Input';
 import { Select } from '@/ui/Select';
 import { toast } from '@/ui/Toast';
+import { CableLibrarySection } from '@/panels/cables/CableLibrarySection';
 import { Field, Note, Section, run } from './shared';
 
 const TRAY_KIND_LABEL: Record<TrayKind, string> = { 'fiber-runway': 'Fiber runway', ladder: 'Ladder rack', basket: 'Wire basket' };
@@ -251,6 +252,7 @@ export function LibraryPanel() {
       <RackLibrary />
       <TrayLibrary />
       <AccessoryLibrary />
+      <CableLibrarySection />
       <KeepoutTool />
     </div>
   );
