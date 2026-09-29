@@ -7,6 +7,7 @@
  * disappears; `syncState` is deliberately untouched so F8 can diff against it.
  */
 import { catalogIndex } from '@/catalog';
+import { unplugComponents } from '../cables/instances';
 import { createComponent, createLink } from '../factories';
 import { snapVec } from '../geometry';
 import type { Component, Id, LinkEnd, Project, Vec2 } from '../types';
@@ -111,6 +112,8 @@ export function deleteComponents(draft: Project, ids: readonly Id[]): DeleteResu
   deleteLinks(draft, linkIds);
   draft.components = draft.components.filter((c) => !set.has(c.id));
   draft.placements = draft.placements.filter((p) => !set.has(p.componentId));
+  // Cable legs plugged into a deleted device become unassigned; their links went with the device above.
+  unplugComponents(draft, componentIds);
   return { componentIds, linkIds };
 }
 

@@ -1,13 +1,16 @@
 /**
  * Bill of materials. Sections: racks by size, devices by model, optics by
- * type, cables by type × standard length, trays by kind (with total metres)
- * and rack accessories by type. One flat CSV (Section column) so it opens as
- * a single table; `bomSections` gives the structured form.
+ * type, cables by type × standard length (plain-link cables by catalog type;
+ * installed cables by full definition — fibers, fiber type, both sides — and
+ * declared / routed length), trays by kind (with total metres) and rack
+ * accessories by type. One flat CSV (Section column) so it opens as a single
+ * table; `bomSections` gives the structured form.
  */
 import { polylineLength } from '@/model/geometry';
 import { indexProject } from '@/model/query';
 import type { AccessoryDef, Project, Rack, RackAccessory, RackAccessoryType, Tray, TrayKind } from '@/model/types';
-import { formatM, lengthInfo, naturalCompare } from './common';
+import { installedCables } from './cableInstances';
+import { formatM, lengthInfo, naturalCompare, ownedByCable } from './common';
 import { toCsv, type CsvCell } from './csv';
 
 export interface BomRow {
@@ -15,6 +18,8 @@ export interface BomRow {
   quantity: number;
   /** Per-unit stock length (cables) or total run length (trays), metres. */
   lengthM: number | null;
+  /** What the Length cell prints instead of `lengthM` ('unspecified' for an installed cable with no declared or routed length). */
+  lengthLabel?: string;
   notes: string;
 }
 
@@ -121,10 +126,52 @@ function opticsSection(project: Project): BomSection {
   return { id: 'optics', title: 'Optics', rows };
 }
 
+/**
+ * Installed cables grouped by full definition × length: '8F OM4 MPO-8 →
+ * 4×LC-duplex' at 5 m × 24. The length is the declared `Cable.lengthM`, else
+ * the jacket route's standard length, else 'unspecified' (an estimate is not
+ * a length to order by).
+ */
+function installedCableRows(project: Project): BomRow[] {
+  const idx = indexProject(project);
+  const groups = new Map<string, { item: string; notes: string[]; lengthM: number | null; declared: number; routed: number; unspecified: number; labels: string[] }>();
+  for (const c of installedCables(project, idx)) {
+    const lengthM = c.length.basis === 'declared' || c.length.basis === 'routed' ? c.length.lengthM : null;
+    const key = `${c.cable.cableDefId}|${lengthM ?? 'unspecified'}`;
+    let g = groups.get(key);
+    if (!g) {
+      const notes: string[] = [];
+      if (c.resolved) notes.push(c.resolved.fiberType, c.kind === 'trunk' ? 'trunk (breakout)' : 'straight');
+      else notes.push(c.def ? 'definition does not resolve' : 'unknown cable definition');
+      g = { item: c.name, notes, lengthM, declared: 0, routed: 0, unspecified: 0, labels: [] };
+      groups.set(key, g);
+    }
+    if (lengthM === null) g.unspecified++;
+    else if (c.length.basis === 'declared') g.declared++;
+    else g.routed++;
+    g.labels.push(c.cable.label);
+  }
+  return [...groups.values()].map((g) => {
+    const basis: string[] = [];
+    if (g.declared) basis.push(`${g.declared} declared`);
+    if (g.routed) basis.push(`${g.routed} routed`);
+    if (g.unspecified) basis.push(`${g.unspecified} with no declared or routed length`);
+    return {
+      item: g.item,
+      quantity: g.declared + g.routed + g.unspecified,
+      lengthM: g.lengthM,
+      ...(g.lengthM === null ? { lengthLabel: 'unspecified' } : {}),
+      notes: `${g.notes.join(', ')}; ${basis.join(', ')}; ${listNames(g.labels)}`,
+    };
+  });
+}
+
 function cablesSection(project: Project): BomSection {
   const idx = indexProject(project);
   const groups = new Map<string, { item: string; media: string; lengthM: number | null; routed: number; estimated: number; unknown: number }>();
   for (const link of project.links) {
+    // A link an installed cable owns is counted once, under that cable's definition.
+    if (ownedByCable(link, idx)) continue;
     const cable = idx.cableOf(link);
     const len = lengthInfo(project, link.id);
     const key = `${cable?.id ?? 'unassigned'}|${len.standardM ?? 'unknown'}`;
@@ -153,6 +200,7 @@ function cablesSection(project: Project): BomSection {
       if (g.unknown) parts.push(`${g.unknown} with an unplaced end (length unknown)`);
       return { item: g.item, quantity: g.routed + g.estimated + g.unknown, lengthM: g.lengthM, notes: parts.join('; ') };
     })
+    .concat(installedCableRows(project))
     .sort((a, b) => naturalCompare(a.item, b.item) || (a.lengthM ?? Infinity) - (b.lengthM ?? Infinity));
   return { id: 'cables', title: 'Cables', rows };
 }
@@ -222,7 +270,7 @@ export function bomSections(project: Project): BomSection[] {
 export function bomCsv(project: Project): string {
   const rows: CsvCell[][] = [[...BOM_HEADER]];
   for (const section of bomSections(project)) {
-    for (const r of section.rows) rows.push([section.title, r.item, r.quantity, formatM(r.lengthM), r.notes]);
+    for (const r of section.rows) rows.push([section.title, r.item, r.quantity, r.lengthLabel ?? formatM(r.lengthM), r.notes]);
   }
   return toCsv(rows);
 }

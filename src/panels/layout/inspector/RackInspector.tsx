@@ -5,9 +5,10 @@
  */
 import { useMemo, useState } from 'react';
 import { catalogIndex } from '@/catalog';
-import { layout, uLabel } from '@/commands';
+import { isPatchFrame, layout, uLabel } from '@/commands';
 import type { AccessoryDef, Face, Id, Rack, RackAccessory, Rotation, Side } from '@/model/types';
 import { command, store, useProject, useProjectIndex } from '@/store';
+import { Badge } from '@/ui/Badge';
 import { Button } from '@/ui/Button';
 import { IconButton } from '@/ui/IconButton';
 import { NumberInput } from '@/ui/Input';
@@ -120,6 +121,17 @@ export function RackInspector({ rackId }: { rackId: Id }) {
         <Field label="Name">
           <TextField aria-label="Rack name" value={rack.name} onCommit={(v) => run(layout.renameRack(rackId, v))} mono />
         </Field>
+        {isPatchFrame(rack) && (
+          <Stat
+            label="Kind"
+            value={
+              <span className="inline-flex items-center gap-1">
+                <Badge tone="warning">Patch frame</Badge>
+                <span className="text-fg-muted">free-standing</span>
+              </span>
+            }
+          />
+        )}
         <Field label="Row">
           <TextField aria-label="Rack row" value={rack.row ?? ''} placeholder="e.g. A" onCommit={(v) => run(layout.setRackRow(rackId, v || undefined))} />
         </Field>

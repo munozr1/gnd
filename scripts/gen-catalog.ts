@@ -286,12 +286,39 @@ const transceivers: TransceiverDef[] = [
   { id: 'xcvr.1g-t', name: '1G-T', formFactor: 'SFP', speedGbps: 1, media: 'Copper', connector: 'RJ45', reachM: 100, lanes: 1 },
 ];
 
+/**
+ * Fiber cables carry both the fiber definition (fiberCount / fiberType /
+ * sides / polarity, from which src/model/cables derives legs, strand map and
+ * names) AND the legacy fields the ERC / BOM code reads. The legacy fields
+ * are hard-coded here rather than derived because this script is compiled
+ * under tsconfig.node.json, which cannot see src/model/cables; the test
+ * "keeps the catalog JSON and the derivation in lock-step" in
+ * src/model/cables/resolve.test.ts asserts they agree (name, endA / endB,
+ * colour, diameter, breakout fanout). Existing ids keep their legacy fields
+ * verbatim so nothing else in the app changes.
+ */
+const OM4_JACKET = '#2dd4bf';
+const OS2_JACKET = '#facc15';
+
 const cables: CableDef[] = [
-  { id: 'cbl.om4-duplex', name: 'OM4 duplex', media: 'OM4', mediaClass: 'fiber', endA: 'LC', endB: 'LC', color: '#2dd4bf', bendRadiusMm: 30, diameterMm: 2 },
-  { id: 'cbl.os2-duplex', name: 'OS2 duplex', media: 'OS2', mediaClass: 'fiber', endA: 'LC', endB: 'LC', color: '#facc15', bendRadiusMm: 30, diameterMm: 2 },
-  { id: 'cbl.om4-mpo-trunk', name: 'OM4 MPO trunk', media: 'OM4', mediaClass: 'fiber', endA: 'MPO-12', endB: 'MPO-12', color: '#2dd4bf', bendRadiusMm: 40, diameterMm: 3.5 },
-  { id: 'cbl.os2-mpo-trunk', name: 'OS2 MPO trunk', media: 'OS2', mediaClass: 'fiber', endA: 'MPO-12', endB: 'MPO-12', color: '#facc15', bendRadiusMm: 40, diameterMm: 3.5 },
-  { id: 'cbl.mpo-breakout', name: 'MPO breakout', media: 'OM4', mediaClass: 'fiber', endA: 'MPO-12', endB: 'LC', color: '#2dd4bf', bendRadiusMm: 40, diameterMm: 3.5, breakout: { fanout: 4 } },
+  // --- Existing fiber cables, now with their fiber definition ---
+  { id: 'cbl.om4-duplex', name: 'OM4 duplex', media: 'OM4', mediaClass: 'fiber', endA: 'LC', endB: 'LC', color: OM4_JACKET, bendRadiusMm: 30, diameterMm: 2, fiberCount: 2, fiberType: 'OM4', sideA: { connector: 'LC-duplex' }, sideB: { connector: 'LC-duplex' }, polarity: 'A' },
+  { id: 'cbl.os2-duplex', name: 'OS2 duplex', media: 'OS2', mediaClass: 'fiber', endA: 'LC', endB: 'LC', color: OS2_JACKET, bendRadiusMm: 30, diameterMm: 2, fiberCount: 2, fiberType: 'OS2', sideA: { connector: 'LC-duplex' }, sideB: { connector: 'LC-duplex' }, polarity: 'A' },
+  { id: 'cbl.om4-mpo-trunk', name: 'OM4 MPO trunk', media: 'OM4', mediaClass: 'fiber', endA: 'MPO-12', endB: 'MPO-12', color: OM4_JACKET, bendRadiusMm: 40, diameterMm: 3.5, fiberCount: 12, fiberType: 'OM4', sideA: { connector: 'MPO-12' }, sideB: { connector: 'MPO-12' }, polarity: 'B' },
+  { id: 'cbl.os2-mpo-trunk', name: 'OS2 MPO trunk', media: 'OS2', mediaClass: 'fiber', endA: 'MPO-12', endB: 'MPO-12', color: OS2_JACKET, bendRadiusMm: 40, diameterMm: 3.5, fiberCount: 12, fiberType: 'OS2', sideA: { connector: 'MPO-12' }, sideB: { connector: 'MPO-12' }, polarity: 'B' },
+  // The 4-lane breakout: an MPO-12 body with 8 fibers used (MPO-8) into four LC-duplex legs.
+  { id: 'cbl.mpo-breakout', name: 'MPO breakout', media: 'OM4', mediaClass: 'fiber', endA: 'MPO-12', endB: 'LC', color: OM4_JACKET, bendRadiusMm: 40, diameterMm: 3.5, breakout: { fanout: 4 }, fiberCount: 8, fiberType: 'OM4', sideA: { connector: 'MPO-8' }, sideB: { connector: 'LC-duplex' }, polarity: 'B' },
+
+  // --- Seed rows from the fiber cable task table (names are the derived display names) ---
+  { id: 'cbl.om4-8f-mpo8-4lc', name: '8F OM4 MPO-8 → 4×LC-duplex', media: 'OM4', mediaClass: 'fiber', endA: 'MPO-12', endB: 'LC', color: OM4_JACKET, bendRadiusMm: 30, diameterMm: 3, breakout: { fanout: 4 }, fiberCount: 8, fiberType: 'OM4', sideA: { connector: 'MPO-8' }, sideB: { connector: 'LC-duplex' }, polarity: 'B' },
+  { id: 'cbl.om4-12f-mpo12-6lc', name: '12F OM4 MPO-12 → 6×LC-duplex', media: 'OM4', mediaClass: 'fiber', endA: 'MPO-12', endB: 'LC', color: OM4_JACKET, bendRadiusMm: 35, diameterMm: 3.5, breakout: { fanout: 6 }, fiberCount: 12, fiberType: 'OM4', sideA: { connector: 'MPO-12' }, sideB: { connector: 'LC-duplex' }, polarity: 'B' },
+  { id: 'cbl.om4-24f-mpo24-12lc', name: '24F OM4 MPO-24 → 12×LC-duplex', media: 'OM4', mediaClass: 'fiber', endA: 'MPO-24', endB: 'LC', color: OM4_JACKET, bendRadiusMm: 50, diameterMm: 5, breakout: { fanout: 12 }, fiberCount: 24, fiberType: 'OM4', sideA: { connector: 'MPO-24' }, sideB: { connector: 'LC-duplex' }, polarity: 'B' },
+  { id: 'cbl.om4-16f-mmc16-2mpo8', name: '16F OM4 MMC-16 → 2×MPO-8', media: 'OM4', mediaClass: 'fiber', endA: 'MMC-16', endB: 'MPO-12', color: OM4_JACKET, bendRadiusMm: 40, diameterMm: 4, breakout: { fanout: 2 }, fiberCount: 16, fiberType: 'OM4', sideA: { connector: 'MMC-16' }, sideB: { connector: 'MPO-8' }, polarity: 'B' },
+  { id: 'cbl.os2-24f-mpo24-2mpo12', name: '24F OS2 MPO-24 → 2×MPO-12', media: 'OS2', mediaClass: 'fiber', endA: 'MPO-24', endB: 'MPO-12', color: OS2_JACKET, bendRadiusMm: 50, diameterMm: 5, breakout: { fanout: 2 }, fiberCount: 24, fiberType: 'OS2', sideA: { connector: 'MPO-24' }, sideB: { connector: 'MPO-12' }, polarity: 'B' },
+  { id: 'cbl.om4-8f-mpo8-mpo8', name: '8F OM4 MPO-8 ↔ MPO-8', media: 'OM4', mediaClass: 'fiber', endA: 'MPO-12', endB: 'MPO-12', color: OM4_JACKET, bendRadiusMm: 30, diameterMm: 3, fiberCount: 8, fiberType: 'OM4', sideA: { connector: 'MPO-8' }, sideB: { connector: 'MPO-8' }, polarity: 'B' },
+  { id: 'cbl.os2-144f-12mpo12', name: '144F OS2 12×MPO-12 ↔ 12×MPO-12', media: 'OS2', mediaClass: 'fiber', endA: 'MPO-12', endB: 'MPO-12', color: OS2_JACKET, bendRadiusMm: 120, diameterMm: 12, fiberCount: 144, fiberType: 'OS2', sideA: { connector: 'MPO-12' }, sideB: { connector: 'MPO-12' }, polarity: 'B' },
+
+  // --- Copper, DAC and AOC: legacy fields only ---
   { id: 'cbl.dac-25g', name: 'DAC 25G', media: 'DAC', mediaClass: 'copper', endA: 'integrated', endB: 'integrated', color: '#1f2937', bendRadiusMm: 50, diameterMm: 5, integrated: { formFactor: 'SFP28', speedGbps: 25, reachM: 5 } },
   { id: 'cbl.dac-100g', name: 'DAC 100G', media: 'DAC', mediaClass: 'copper', endA: 'integrated', endB: 'integrated', color: '#1f2937', bendRadiusMm: 60, diameterMm: 7, integrated: { formFactor: 'QSFP28', speedGbps: 100, reachM: 3 } },
   { id: 'cbl.dac-400g', name: 'DAC 400G', media: 'DAC', mediaClass: 'copper', endA: 'integrated', endB: 'integrated', color: '#1f2937', bendRadiusMm: 70, diameterMm: 8, integrated: { formFactor: 'QSFP-DD', speedGbps: 400, reachM: 2.5 } },
@@ -304,6 +331,10 @@ const racks: RackDef[] = [
   { id: 'rack.standard-42u', name: 'Standard rack 42U', heightU: 42, widthMm: 600, depthMm: 1070 },
   { id: 'rack.tall-48u', name: 'Tall rack 48U', heightU: 48, widthMm: 600, depthMm: 1070 },
   { id: 'rack.network-42u', name: 'Network rack 42U (800 wide)', heightU: 42, widthMm: 800, depthMm: 1070 },
+  // Patch frames: free-standing patch-panel walls, a thin 120 mm slab with the
+  // panels on both faces. A panel dropped on the floor gets its own 12U wall.
+  { id: 'rack.patch-frame-12u', name: 'Patch panel wall 12U', heightU: 12, widthMm: 600, depthMm: 120, kind: 'patch-frame' },
+  { id: 'rack.patch-frame-42u', name: 'Patch panel wall 42U', heightU: 42, widthMm: 600, depthMm: 120, kind: 'patch-frame' },
 ];
 
 const trays: TrayDef[] = [
@@ -328,6 +359,48 @@ const accessories: AccessoryDef[] = [
   { id: 'acc.top-entry', name: 'Rack top entry (brush)', type: 'top-entry' },
 ];
 
+/**
+ * Fiber connector rows for src/model/cables. Mirrors `ConnectorDef` in
+ * src/model/cables/connectors.ts; declared locally because tsconfig.node.json
+ * is a composite project that lists only src/model/types.ts from src.
+ */
+interface ConnectorRow {
+  id: string;
+  name: string;
+  family: 'small' | 'multi';
+  vsff: boolean;
+  positions: number;
+  positionsUsed: number[];
+  fibersUsed: number;
+  genderOptions?: ('pinned' | 'unpinned')[];
+  color: string;
+  /** The name the ERC rules / transceivers / legacy CableDef ends use. */
+  legacyConnector: string;
+}
+
+const range1 = (n: number): number[] => Array.from({ length: n }, (_, i) => i + 1);
+const MPO_GENDERS: ('pinned' | 'unpinned')[] = ['pinned', 'unpinned'];
+// Boot colours are display defaults only (aqua on MPO-8/12 reflects their MMF use).
+const LC_BOOT = '#d9c9a5';
+const VSFF_DUPLEX_BOOT = '#9fd3c7';
+const MPO12_BOOT = '#5cc8c1';
+const MPO16_BOOT = '#7fb0ff';
+const MMC_BOOT = '#c9a8ff';
+
+const connectors: ConnectorRow[] = [
+  { id: 'LC-simplex', name: 'LC simplex', family: 'small', vsff: false, positions: 1, positionsUsed: [1], fibersUsed: 1, color: LC_BOOT, legacyConnector: 'LC' },
+  { id: 'LC-duplex', name: 'LC duplex', family: 'small', vsff: false, positions: 2, positionsUsed: [1, 2], fibersUsed: 2, color: LC_BOOT, legacyConnector: 'LC' },
+  { id: 'SN-duplex', name: 'SN duplex', family: 'small', vsff: true, positions: 2, positionsUsed: [1, 2], fibersUsed: 2, color: VSFF_DUPLEX_BOOT, legacyConnector: 'SN' },
+  { id: 'CS-duplex', name: 'CS duplex', family: 'small', vsff: true, positions: 2, positionsUsed: [1, 2], fibersUsed: 2, color: VSFF_DUPLEX_BOOT, legacyConnector: 'CS' },
+  // MPO-8 is an MPO-12 body with the four centre positions unpopulated.
+  { id: 'MPO-8', name: 'MPO-8', family: 'multi', vsff: false, positions: 12, positionsUsed: [1, 2, 3, 4, 9, 10, 11, 12], fibersUsed: 8, genderOptions: MPO_GENDERS, color: MPO12_BOOT, legacyConnector: 'MPO-12' },
+  { id: 'MPO-12', name: 'MPO-12', family: 'multi', vsff: false, positions: 12, positionsUsed: range1(12), fibersUsed: 12, genderOptions: MPO_GENDERS, color: MPO12_BOOT, legacyConnector: 'MPO-12' },
+  { id: 'MPO-16', name: 'MPO-16', family: 'multi', vsff: false, positions: 16, positionsUsed: range1(16), fibersUsed: 16, genderOptions: MPO_GENDERS, color: MPO16_BOOT, legacyConnector: 'MPO-16' },
+  { id: 'MPO-24', name: 'MPO-24', family: 'multi', vsff: false, positions: 24, positionsUsed: range1(24), fibersUsed: 24, genderOptions: MPO_GENDERS, color: MPO16_BOOT, legacyConnector: 'MPO-24' },
+  { id: 'MMC-16', name: 'MMC-16', family: 'multi', vsff: true, positions: 16, positionsUsed: range1(16), fibersUsed: 16, genderOptions: MPO_GENDERS, color: MMC_BOOT, legacyConnector: 'MMC-16' },
+  { id: 'MMC-24', name: 'MMC-24', family: 'multi', vsff: true, positions: 24, positionsUsed: range1(24), fibersUsed: 24, genderOptions: MPO_GENDERS, color: MMC_BOOT, legacyConnector: 'MMC-24' },
+];
+
 const w = (file: string, data: unknown) =>
   writeFileSync(path.join(OUT, file), JSON.stringify(data, null, 2) + '\n');
 
@@ -338,7 +411,8 @@ w('cables.json', cables);
 w('racks.json', racks);
 w('trays.json', trays);
 w('accessories.json', accessories);
+w('connectors.json', connectors);
 
 console.log(
-  `catalog written: ${devices.length} devices, ${transceivers.length} optics, ${cables.length} cables, ${racks.length} racks, ${trays.length} trays, ${accessories.length} accessories`,
+  `catalog written: ${devices.length} devices, ${transceivers.length} optics, ${cables.length} cables, ${racks.length} racks, ${trays.length} trays, ${accessories.length} accessories, ${connectors.length} connectors`,
 );

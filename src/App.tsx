@@ -14,6 +14,7 @@ import { ToastViewport } from '@/ui/Toast';
 import { TooltipProvider } from '@/ui/Tooltip';
 import '@/panels/layout'; // registers the layout panels, dialogs and toolbar
 import '@/panels/library'; // registers the schematic library panel + 'library' / custom-device dialogs
+import '@/panels/cables'; // Cable Builder dialog + the fiber cable library section / panel (the cable inspector and HUD are hosted by the schematic panels / editor)
 import '@/panels/schematic'; // schematic inspector and hierarchical sheets
 import { EditorFrame, RegisteredDialogs } from '@/panels/shell/Docks';
 import { EditorTabs } from '@/panels/shell/EditorTabs';

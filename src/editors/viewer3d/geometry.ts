@@ -1,8 +1,10 @@
+import { isPatchFrame } from '@/commands/placement';
 import { boundsOf } from '@/model/geometry';
 import { indexProject } from '@/model/query';
-import { portWorldPos, rackCenter, rackFloorRect, rackLocalToFloor, rackTopMm, routePath3d, U_MM } from '@/model/routing';
+import { portPlacement, portWorldPos, rackCenter, rackFloorRect, rackLocalToFloor, rackTopMm, routePath3d, U_MM } from '@/model/routing';
 import type { Project, RoutingLayer, SelectionItem, Vec3 } from '@/model/types';
 import { unionRects } from '@/editors/layout/viewport';
+import { buildInstalledCable3d, PLATE_MM, type InstalledCable3d } from './cables3d';
 
 export type V3 = [number, number, number];
 export interface BoxPart { target: SelectionItem; position: V3; size: V3; rotation: number; color: string }
@@ -14,15 +16,30 @@ export function buildPhysicalScene(project: Project) {
   const idx = indexProject(project);
   const frames: BoxPart[] = [], devices: BoxPart[] = [], ports: BoxPart[] = [], doors: BoxPart[] = [], accessories: BoxPart[] = [];
   const labels: { id: string; text: string; position: V3 }[] = [];
+  // An installed cable draws its own jacket, boot and legs, so the links it owns are drawn neither as airwires nor as pigtails.
+  const installed: InstalledCable3d[] = (project.cables ?? []).flatMap((c) => { const s = buildInstalledCable3d(project, c); return s ? [s] : []; });
+  const owned = new Set(installed.map((s) => s.id));
   for (const rack of project.racks) {
     const target: SelectionItem = { kind: 'rack', id: rack.id }, top = rackTopMm(rack), rotation = -rack.rotationDeg * Math.PI / 180;
     const part = (across: number, y: number, depth: number, width: number, height: number, length: number, color = '#52687b'): BoxPart => {
       const p = rackLocalToFloor(rack, { across, depth });
       return { target, position: [p.x / 1000, y / 1000, p.y / 1000], size: [width / 1000, height / 1000, length / 1000], rotation, color };
     };
-    for (const x of [20, rack.widthMm - 20]) for (const z of [20, rack.depthMm - 20]) frames.push(part(x, top / 2, z, 35, top, 35));
-    for (const y of [15, top - 15]) frames.push(part(rack.widthMm / 2, y, rack.depthMm / 2, rack.widthMm, 30, rack.depthMm, '#344a5c'));
-    doors.push(part(rack.widthMm / 2, top / 2, rack.depthMm + 4, rack.widthMm - 30, top - 70, 8, '#6d8f9e'));
+    const frame = isPatchFrame(rack);
+    if (frame) {
+      // A patch frame is a patch-panel wall: a thin slab under a cap, standing on a foot at each end, with no posts and no door so
+      // both faces stay visible. The feet sit outside the 19" panel width because U1 starts at the floor: a full-width plinth
+      // would bury the bottom panel and its ports.
+      // The slab sits in the rack-post range of the palette: a vertical face gets 60% of the floor's key light, so a darker slab
+      // reads as a black void next to the #283747 floor rather than as a wall.
+      frames.push(part(rack.widthMm / 2, top / 2, rack.depthMm / 2, rack.widthMm, top, rack.depthMm, '#4b6074'));
+      for (const x of [25, rack.widthMm - 25]) frames.push(part(x, 20, rack.depthMm / 2, 50, 40, rack.depthMm + 120, '#2f3d4b'));
+      frames.push(part(rack.widthMm / 2, top - 10, rack.depthMm / 2, rack.widthMm + 20, 20, rack.depthMm + 20, '#5d7488'));
+    } else {
+      for (const x of [20, rack.widthMm - 20]) for (const z of [20, rack.depthMm - 20]) frames.push(part(x, top / 2, z, 35, top, 35, '#52687b'));
+      for (const y of [15, top - 15]) frames.push(part(rack.widthMm / 2, y, rack.depthMm / 2, rack.widthMm, 30, rack.depthMm, '#344a5c'));
+      doors.push(part(rack.widthMm / 2, top / 2, rack.depthMm + 4, rack.widthMm - 30, top - 70, 8, '#6d8f9e'));
+    }
     const center = rackCenter(rack);
     labels.push({ id: rack.id, text: rack.name, position: [center.x / 1000, top / 1000 + 0.14, center.y / 1000] });
     for (const acc of project.accessories.filter((a) => a.rackId === rack.id)) {
@@ -34,18 +51,37 @@ export function buildPhysicalScene(project: Project) {
     for (const c of idx.componentsInRack(rack.id)) {
       const placement = idx.placement(c.id), fp = idx.footprintOf(c);
       if (placement?.uPosition == null) continue;
-      const height = (fp?.heightU ?? 1) * U_MM, depth = Math.min(fp?.depthMm ?? 600, rack.depthMm);
-      const centerDepth = placement.face === 'front' ? rack.depthMm - depth / 2 : depth / 2;
-      devices.push({ ...part(rack.widthMm / 2, (placement.uPosition - 1) * U_MM + height / 2, centerDepth, fp?.widthMm ?? 482.6, height - 2, depth, idx.symbolOf(c)?.kind === 'switch' ? '#4b889e' : '#597080'), target: { kind: 'component', id: c.id } });
+      const device: SelectionItem = { kind: 'component', id: c.id }, kind = idx.symbolOf(c)?.kind;
+      const height = (fp?.heightU ?? 1) * U_MM, uCentre = (placement.uPosition - 1) * U_MM + height / 2, width = fp?.widthMm ?? 482.6, color = kind === 'switch' ? '#4b889e' : '#597080';
+      if (frame) {
+        // On a wall a panel is a faceplate proud of each face rather than a box inside the frame; the fibers arrive from both sides.
+        const plate = fp?.kind === 'patch-panel' || kind === 'patch-panel' ? '#7d8ea3' : color;
+        for (const depth of [rack.depthMm + PLATE_MM / 2, -PLATE_MM / 2]) devices.push({ ...part(rack.widthMm / 2, uCentre, depth, width, height - 4, PLATE_MM, plate), target: device });
+      } else {
+        const depth = Math.min(fp?.depthMm ?? 600, rack.depthMm);
+        const centerDepth = placement.face === 'front' ? rack.depthMm - depth / 2 : depth / 2;
+        devices.push({ ...part(rack.widthMm / 2, uCentre, centerDepth, width, height - 2, depth, color), target: device });
+      }
       for (const port of fp?.ports ?? []) {
-        const p = portWorldPos(project, c.id, port.id);
+        const p = portWorldPos(project, c.id, port.id), info = frame ? portPlacement(project, c.id, port.id) : null;
         if (!p) continue;
-        const used = !idx.isPortFree(c.id, port.id), optic = !!c.optics[port.id];
-        ports.push({ target: { kind: 'component', id: c.id }, position: metres(p), size: [port.type === 'RJ45' ? 0.013 : 0.009, 0.009, optic ? 0.032 : 0.008], rotation, color: used ? '#66ead3' : '#162934' });
+        const used = !idx.isPortFree(c.id, port.id), optic = !!c.optics[port.id], studColor = used ? '#66ead3' : '#162934';
+        const studW = port.type === 'RJ45' ? 13 : 9, studL = optic ? 32 : 8;
+        if (!info) { ports.push({ target: device, position: metres(p), size: [studW / 1000, 0.009, studL / 1000], rotation, color: studColor }); continue; }
+        // On a wall the port sits on the outer surface of the faceplate; at the wall face itself it would be buried inside the plate.
+        const front = info.face === 'front', across = front ? info.acrossFromViewerLeft : rack.widthMm - info.acrossFromViewerLeft;
+        const out = (mm: number) => (front ? rack.depthMm + mm : -mm);
+        ports.push({ ...part(across, info.elevationMm, out(PLATE_MM), studW, 9, studL, studColor), target: device });
+        if (!used) continue;
+        // The "fiber in" cue: a 70 mm pigtail stub in the cable colour, leaving the faceplate and pointing away from its face.
+        const link = idx.linksOf(c.id).find((l) => (l.a.componentId === c.id && l.a.portId === port.id) || (l.b.componentId === c.id && l.b.portId === port.id));
+        if (link?.cableId && owned.has(link.cableId)) continue;
+        ports.push({ ...part(across, info.elevationMm, out(PLATE_MM + 35), 6, 6, 70, (link && idx.cableOf(link)?.color) ?? '#66ead3'), target: device });
       }
     }
   }
   const cables: CablePart[] = project.links.flatMap((link) => {
+    if (link.cableId && owned.has(link.cableId)) return [];
     const route = project.routes[link.id], path = route && routePath3d(project, link.id), cable = idx.cableOf(link);
     const a = portWorldPos(project, link.a.componentId, link.a.portId), b = portWorldPos(project, link.b.componentId, link.b.portId);
     if (!a || !b) return [];
@@ -54,7 +90,7 @@ export function buildPhysicalScene(project: Project) {
   const rect = unionRects([...project.racks.map(rackFloorRect), ...project.trays.filter((t) => t.points.length).map((t) => boundsOf(t.points))]) ?? boundsOf(project.room.outline);
   const center: V3 = [(rect.x + rect.width / 2) / 1000, 1, (rect.y + rect.height / 2) / 1000];
   const span = Math.max(2.5, rect.width / 1000, rect.height / 1000, project.room.ceilingMm / 1000);
-  return { frames, devices, ports, doors, accessories, labels, cables, center, span };
+  return { frames, devices, ports, doors, accessories, labels, cables, installed, center, span };
 }
 
 /** Clip each grid line to the room polygon, including concave outlines. */

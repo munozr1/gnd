@@ -1,6 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { builtinCatalog } from '@/catalog';
+import { routeJacket, trunkFixture } from '@/io/exports/test-fixtures';
+import { resolveCable } from '@/model/cables';
 import { createComponent, createLink, createProject, createRack, ROOT_SHEET_ID } from '@/model/factories';
+import { routeOwner } from '@/model/routing';
 import type { Project } from '@/model/types';
 import {
   clearPersistence,
@@ -253,7 +256,8 @@ describe('JSON', () => {
     const p = migrate(minimal, '2026-03-03T00:00:00.000Z');
     const fresh = createProject('Old', '2026-03-03T00:00:00.000Z');
     expect(p).toEqual({ ...fresh, id: 'p1' });
-    expect(p.version).toBe(1);
+    expect(p.version).toBe(CURRENT_PROJECT_VERSION);
+    expect(p.version).toBe(2);
     expect(p.sheets).toEqual([{ id: ROOT_SHEET_ID, name: 'Root', parentId: null }]);
   });
 
@@ -278,6 +282,12 @@ describe('JSON', () => {
     expect(p.syncState.links).toEqual({});
     expect(p.components[0]).toMatchObject({ footprintDefId: null, optics: {} });
     expect(p.links[0]).toMatchObject({ cableDefId: null, sch: { wirePoints: [] } });
+  });
+
+  it('rejects a file from a newer schema (version 3)', () => {
+    const v3 = { ...createProject('Future', '2026-03-03T00:00:00.000Z'), version: 3 };
+    expect(() => parseProject(JSON.stringify(v3))).toThrow(ProjectParseError);
+    expect(() => parseProject(JSON.stringify(v3))).toThrow(/version 3 is newer/);
   });
 
   it('readJsonFile parses a File', async () => {
@@ -307,5 +317,112 @@ describe('JSON', () => {
       click.mockRestore();
       vi.unstubAllGlobals();
     }
+  });
+});
+
+describe('migration v1 → v2 (configurable fiber cables)', () => {
+  /**
+   * A v1 file as the app wrote it before configurable cables: no `cables`,
+   * a custom OM4 LC ↔ LC definition with only the legacy vocabulary, routes
+   * without an owner (plus, from an interim dev build, a jacket route that
+   * already says 'cable' and a corrupt owner that must not survive).
+   */
+  const v1 = () => ({
+    id: 'p1',
+    name: 'Old',
+    version: 1,
+    rev: 'B',
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-02T00:00:00.000Z',
+    sheets: [{ id: 'root', name: 'Root', parentId: null }],
+    components: [
+      { id: 'c1', ref: 'SW1', symbolDefId: leaf.id, footprintDefId: null, optics: {}, sch: { pos: { x: 0, y: 0 }, rotation: 0, sheetId: 'root' } },
+      { id: 'c2', ref: 'SW2', symbolDefId: leaf.id, footprintDefId: null, optics: {}, sch: { pos: { x: 300, y: 0 }, rotation: 0, sheetId: 'root' } },
+    ],
+    links: [{ id: 'l1', a: { componentId: 'c1', portId: 'eth1/1' }, b: { componentId: 'c2', portId: 'eth1/1' }, cableDefId: 'cbl.custom.om4-lc', sch: { wirePoints: [] } }],
+    routes: {
+      l1: { linkId: 'l1', aRack: { side: 'left', entry: null, pinned: false }, bRack: { side: 'right', entry: null, pinned: false }, segments: [] },
+      cbl1: { linkId: 'cbl1', owner: 'cable', aRack: { side: 'left', entry: null, pinned: false }, bRack: { side: 'left', entry: null, pinned: false }, segments: [] },
+      l2: { linkId: 'l2', owner: 'bogus', aRack: { side: 'left', entry: null, pinned: false }, bRack: { side: 'left', entry: null, pinned: false }, segments: [] },
+    },
+    customCatalog: {
+      symbols: [],
+      footprints: [],
+      transceivers: [],
+      cables: [
+        { id: 'cbl.custom.om4-lc', name: 'OM4 LC cord', media: 'OM4', mediaClass: 'fiber', endA: 'LC', endB: 'LC', color: '#2dd4bf', bendRadiusMm: 30, diameterMm: 2 },
+        { id: 'cbl.custom.mpo-lc', name: 'MPO breakout', media: 'OM4', mediaClass: 'fiber', endA: 'MPO-12', endB: 'LC', color: '#2dd4bf', bendRadiusMm: 30, diameterMm: 3, breakout: { fanout: 4 } },
+        { id: 'cbl.custom.cat6', name: 'Cat6a', media: 'Cat6a', mediaClass: 'copper', endA: 'RJ45', endB: 'RJ45', color: '#60a5fa', bendRadiusMm: 30, diameterMm: 6 },
+      ],
+    },
+  });
+
+  it('upgrades the custom fiber definitions, defaults cables to [] and keeps links as they were', () => {
+    const p = parseProject(JSON.stringify(v1()));
+    expect(p.version).toBe(2);
+    expect(p.cables).toEqual([]);
+    expect(p.links).toEqual(v1().links);
+
+    const lc = p.customCatalog.cables.find((c) => c.id === 'cbl.custom.om4-lc')!;
+    expect(lc).toMatchObject({
+      name: 'OM4 LC cord',
+      media: 'OM4',
+      endA: 'LC',
+      endB: 'LC',
+      fiberCount: 2,
+      fiberType: 'OM4',
+      sideA: { connector: 'LC-duplex' },
+      sideB: { connector: 'LC-duplex' },
+      polarity: 'A',
+    });
+    const resolved = resolveCable(lc);
+    if ('error' in resolved) throw new Error(resolved.error);
+    expect(resolved.kind).toBe('straight');
+    expect(resolved.channels).toBe(1);
+    expect(resolved.sideA.legs).toHaveLength(1);
+    expect(resolved.sideB.legs).toHaveLength(1);
+    expect(resolved.displayName).toBe('2F OM4 LC-duplex ↔ LC-duplex');
+
+    expect(p.customCatalog.cables.find((c) => c.id === 'cbl.custom.mpo-lc')).toMatchObject({
+      fiberCount: 8,
+      sideA: { connector: 'MPO-8' },
+      sideB: { connector: 'LC-duplex' },
+      polarity: 'B',
+      breakout: { fanout: 4 },
+    });
+    // Copper stays exactly as it was.
+    expect(p.customCatalog.cables.find((c) => c.id === 'cbl.custom.cat6')).toEqual(v1().customCatalog.cables[2]);
+  });
+
+  it("routes default to the 'link' owner, keep 'cable' and drop anything else", () => {
+    const p = parseProject(JSON.stringify(v1()));
+    expect(p.routes.l1).not.toHaveProperty('owner');
+    expect(routeOwner(p.routes.l1!)).toBe('link');
+    expect(p.routes.cbl1?.owner).toBe('cable');
+    expect(p.routes.l2).not.toHaveProperty('owner');
+    expect(routeOwner(p.routes.l2!)).toBe('link');
+  });
+
+  it('is idempotent: a migrated file re-parsed is unchanged, and a file without a version counts as v1', () => {
+    const once = parseProject(JSON.stringify(v1()));
+    expect(parseProject(serializeProject(once))).toEqual(once);
+    const { version, ...unversioned } = v1();
+    void version;
+    expect(parseProject(JSON.stringify(unversioned))).toEqual(once);
+  });
+
+  it('round-trips a v2 project with installed cables and a jacket route exactly (JSON and IndexedDB)', async () => {
+    const f = trunkFixture();
+    const project = routeJacket(f.project, f.cable.id);
+    expect(project.version).toBe(2);
+    expect(project.cables).toHaveLength(1);
+    expect(project.routes[f.cable.id]?.owner).toBe('cable');
+    expect(project.links.filter((l) => l.cableId === f.cable.id)).toHaveLength(4);
+
+    expect(parseProject(serializeProject(project))).toEqual(project);
+
+    const saved = await saveProjectNow(project, '2026-02-02T00:00:00.000Z');
+    expect(await loadProject(project.id)).toEqual({ ...project, updatedAt: '2026-02-02T00:00:00.000Z' });
+    expect(saved.cables).toBe(project.cables);
   });
 });

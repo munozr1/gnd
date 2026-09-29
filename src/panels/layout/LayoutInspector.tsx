@@ -27,6 +27,7 @@ const KIND_LABEL: Record<SelectionItem['kind'], string> = {
   sheet: 'sheet',
   keepout: 'keep-out',
   accessory: 'accessory',
+  cable: 'cable',
 };
 
 function MultiSelection({ selection }: { selection: readonly SelectionItem[] }) {
@@ -85,6 +86,10 @@ export function LayoutInspector() {
         body = <DeviceInspector componentId={primary.id} />;
         break;
       case 'link':
+        body = <RouteInspector linkId={primary.id} />;
+        break;
+      case 'cable':
+        // An installed cable's route is its jacket, keyed by the cable id.
         body = <RouteInspector linkId={primary.id} />;
         break;
       case 'tray':

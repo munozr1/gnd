@@ -1,13 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { builtinCatalog } from '@/catalog';
 import { drcRuleById } from '@/model/drc';
-import { createProject } from '@/model/factories';
+import { ROOT_SHEET_ID, createComponent, createProject } from '@/model/factories';
 import { rackRect } from '@/model/geometry';
 import * as routing from '@/model/routing';
-import { addDevice, addRack, addRoute, routeTwoRacks, standardRack, twoRackFixture } from '@/model/routing/test-fixtures';
-import type { Project } from '@/model/types';
+import { addDevice, addRack, addRoute, routeTwoRacks, standardRack, symbolDef, twoRackFixture } from '@/model/routing/test-fixtures';
+import type { FootprintDef, Project } from '@/model/types';
 import { emptyHistory, executeCommand, undoCommand, type Command, type History } from '@/store/commands';
 import * as layout from './layout';
+import { nextFreeFloorPos } from './placement';
 
 const uCollision = drcRuleById('u-collision')!;
 const trayDef = builtinCatalog.trays.find((t) => t.id === 'tray.fiber-runway-6')!;
@@ -140,6 +141,92 @@ describe('deleteRacks', () => {
 
     const u = undoCommand(r.project, r.history, 'layout');
     expect(u.project).toEqual(before);
+  });
+});
+
+describe('placeInNewFrame', () => {
+  const frame12 = builtinCatalog.racks.find((r) => r.id === 'rack.patch-frame-12u')!;
+
+  it('makes a 1U panel its own 12U patch frame named PF-<ref>, placed at U1 front, and returns the rack id', () => {
+    const f = twoRackFixture();
+    const pp = addDevice(f.project, 'sym.fiber-patch-panel-24lc', 'PP1');
+    const cmd = layout.placeInNewFrame(pp.id, { x: 7000, y: 2000 });
+    const r = exec(f.project, cmd);
+    expect(r.changed).toBe(true);
+    const rack = r.project.racks.find((x) => x.id === cmd.result)!;
+    expect(rack).toMatchObject({ name: 'PF-PP1', kind: 'patch-frame', heightU: 12, widthMm: 600, depthMm: 120, pos: { x: 7000, y: 2000 }, rotationDeg: 0 });
+    expect(r.project.racks.map((x) => x.name)).toEqual(['R01', 'R02', 'PF-PP1']);
+    expect(placementOf(r.project, pp.id)).toEqual({ componentId: pp.id, rackId: rack.id, uPosition: 1, face: 'front' });
+    expect(uCollision.check(r.project)).toEqual([]);
+  });
+
+  it('numbers a second frame for the same ref PF-<ref>-2', () => {
+    const f = twoRackFixture();
+    const a = addDevice(f.project, 'sym.server-1u', 'PP1'), b = addDevice(f.project, 'sym.server-1u', 'PP1');
+    let p = exec(f.project, layout.placeInNewFrame(a.id, { x: 7000, y: 2000 })).project;
+    const cmd = layout.placeInNewFrame(b.id, { x: 8000, y: 2000 });
+    p = exec(p, cmd).project;
+    expect(p.racks.map((x) => x.name)).toEqual(['R01', 'R02', 'PF-PP1', 'PF-PP1-2']);
+    expect(placementOf(p, b.id)).toMatchObject({ rackId: cmd.result, uPosition: 1 });
+    expect(placementOf(p, a.id)!.rackId).not.toBe(cmd.result);
+  });
+
+  it('honours an explicit def, name, rotation and face', () => {
+    const f = twoRackFixture();
+    const pp = addDevice(f.project, 'sym.server-1u', 'PP1');
+    const cmd = layout.placeInNewFrame(pp.id, { x: 7000, y: 2000 }, { defId: 'rack.patch-frame-42u', name: 'Frame A', rotationDeg: 90, face: 'rear' });
+    const r = exec(f.project, cmd);
+    expect(r.project.racks.find((x) => x.id === cmd.result)).toMatchObject({ name: 'Frame A', kind: 'patch-frame', heightU: 42, rotationDeg: 90 });
+    expect(placementOf(r.project, pp.id)).toMatchObject({ rackId: cmd.result, uPosition: 1, face: 'rear' });
+    expect(() => exec(f.project, layout.placeInNewFrame(pp.id, undefined, { name: 'R01' }))).toThrow(/already exists/);
+    expect(() => exec(f.project, layout.placeInNewFrame(pp.id, undefined, { defId: 'rack.nope' }))).toThrow(/Unknown rack def/);
+    expect(() => exec(f.project, layout.placeInNewFrame('nope'))).toThrow(/does not exist/);
+  });
+
+  it('defaults to the next free floor spot right of the bottom row, on the grid', () => {
+    const f = twoRackFixture();
+    const pp = addDevice(f.project, 'sym.server-1u', 'PP1');
+    const r = exec(f.project, layout.placeInNewFrame(pp.id));
+    const rack = r.project.racks.at(-1)!;
+    expect(rack.pos).toEqual(nextFreeFloorPos(f.project, frame12));
+    // R02 ends at x = 4600; the next 600 mm grid line past a grid-wide gap is 5400. The row top (1000) snaps down to 600.
+    expect(rack.pos).toEqual({ x: 5400, y: 600 });
+  });
+
+  it('wraps to a new row when the frame would leave a narrow room', () => {
+    const f = twoRackFixture();
+    f.project.room.outline = [{ x: 0, y: 0 }, { x: 5500, y: 0 }, { x: 5500, y: 8000 }, { x: 0, y: 8000 }];
+    const pp = addDevice(f.project, 'sym.server-1u', 'PP1');
+    const r = exec(f.project, layout.placeInNewFrame(pp.id));
+    // 5400 + 600 > 5500 → first grid column of the next row below the racks' bottom edge (2070) plus a gap.
+    expect(r.project.racks.at(-1)!.pos).toEqual({ x: 600, y: 3000 });
+  });
+
+  it('undo removes both the frame and the placement', () => {
+    const f = twoRackFixture();
+    const pp = addDevice(f.project, 'sym.server-1u', 'PP1');
+    const before = structuredClone(f.project);
+    const r = exec(f.project, layout.placeInNewFrame(pp.id));
+    expect(r.project.racks).toHaveLength(3);
+    expect(placementOf(r.project, pp.id)!.rackId).toBe(r.project.racks[2]!.id);
+    const u = undoCommand(r.project, r.history, 'layout');
+    expect(u.project.racks.map((x) => x.name)).toEqual(['R01', 'R02']);
+    expect(placementOf(u.project, pp.id)).toMatchObject({ rackId: null, uPosition: null });
+    expect(u.project).toEqual(before);
+  });
+
+  it('grows the frame to the 42U patch rack for a tall custom device without a placement row', () => {
+    const f = twoRackFixture();
+    const fp: FootprintDef = { id: 'fp.custom-20u', model: 'Chassis 20U', kind: 'generic', heightU: 20, depthMm: 250, ports: [] };
+    f.project.customCatalog = { ...f.project.customCatalog, footprints: [fp] };
+    const c = createComponent(symbolDef('sym.server-1u'), { sheetId: ROOT_SHEET_ID, pos: { x: 0, y: 0 }, ref: 'BIG1', footprintDefId: fp.id });
+    f.project.components.push(c);
+    const cmd = layout.placeInNewFrame(c.id);
+    const r = exec(f.project, cmd);
+    expect(r.project.racks.find((x) => x.id === cmd.result)).toMatchObject({ name: 'PF-BIG1', kind: 'patch-frame', heightU: 42, widthMm: 600, depthMm: 120 });
+    expect(placementOf(r.project, c.id)).toEqual({ componentId: c.id, rackId: cmd.result, uPosition: 1, face: 'front' });
+    expect(uCollision.check(r.project)).toEqual([]);
+    expect(undoCommand(r.project, r.history, 'layout').project.placements.some((p) => p.componentId === c.id)).toBe(false);
   });
 });
 

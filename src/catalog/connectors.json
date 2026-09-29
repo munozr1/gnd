@@ -1,0 +1,253 @@
+[
+  {
+    "id": "LC-simplex",
+    "name": "LC simplex",
+    "family": "small",
+    "vsff": false,
+    "positions": 1,
+    "positionsUsed": [
+      1
+    ],
+    "fibersUsed": 1,
+    "color": "#d9c9a5",
+    "legacyConnector": "LC"
+  },
+  {
+    "id": "LC-duplex",
+    "name": "LC duplex",
+    "family": "small",
+    "vsff": false,
+    "positions": 2,
+    "positionsUsed": [
+      1,
+      2
+    ],
+    "fibersUsed": 2,
+    "color": "#d9c9a5",
+    "legacyConnector": "LC"
+  },
+  {
+    "id": "SN-duplex",
+    "name": "SN duplex",
+    "family": "small",
+    "vsff": true,
+    "positions": 2,
+    "positionsUsed": [
+      1,
+      2
+    ],
+    "fibersUsed": 2,
+    "color": "#9fd3c7",
+    "legacyConnector": "SN"
+  },
+  {
+    "id": "CS-duplex",
+    "name": "CS duplex",
+    "family": "small",
+    "vsff": true,
+    "positions": 2,
+    "positionsUsed": [
+      1,
+      2
+    ],
+    "fibersUsed": 2,
+    "color": "#9fd3c7",
+    "legacyConnector": "CS"
+  },
+  {
+    "id": "MPO-8",
+    "name": "MPO-8",
+    "family": "multi",
+    "vsff": false,
+    "positions": 12,
+    "positionsUsed": [
+      1,
+      2,
+      3,
+      4,
+      9,
+      10,
+      11,
+      12
+    ],
+    "fibersUsed": 8,
+    "genderOptions": [
+      "pinned",
+      "unpinned"
+    ],
+    "color": "#5cc8c1",
+    "legacyConnector": "MPO-12"
+  },
+  {
+    "id": "MPO-12",
+    "name": "MPO-12",
+    "family": "multi",
+    "vsff": false,
+    "positions": 12,
+    "positionsUsed": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ],
+    "fibersUsed": 12,
+    "genderOptions": [
+      "pinned",
+      "unpinned"
+    ],
+    "color": "#5cc8c1",
+    "legacyConnector": "MPO-12"
+  },
+  {
+    "id": "MPO-16",
+    "name": "MPO-16",
+    "family": "multi",
+    "vsff": false,
+    "positions": 16,
+    "positionsUsed": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16
+    ],
+    "fibersUsed": 16,
+    "genderOptions": [
+      "pinned",
+      "unpinned"
+    ],
+    "color": "#7fb0ff",
+    "legacyConnector": "MPO-16"
+  },
+  {
+    "id": "MPO-24",
+    "name": "MPO-24",
+    "family": "multi",
+    "vsff": false,
+    "positions": 24,
+    "positionsUsed": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24
+    ],
+    "fibersUsed": 24,
+    "genderOptions": [
+      "pinned",
+      "unpinned"
+    ],
+    "color": "#7fb0ff",
+    "legacyConnector": "MPO-24"
+  },
+  {
+    "id": "MMC-16",
+    "name": "MMC-16",
+    "family": "multi",
+    "vsff": true,
+    "positions": 16,
+    "positionsUsed": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16
+    ],
+    "fibersUsed": 16,
+    "genderOptions": [
+      "pinned",
+      "unpinned"
+    ],
+    "color": "#c9a8ff",
+    "legacyConnector": "MMC-16"
+  },
+  {
+    "id": "MMC-24",
+    "name": "MMC-24",
+    "family": "multi",
+    "vsff": true,
+    "positions": 24,
+    "positionsUsed": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24
+    ],
+    "fibersUsed": 24,
+    "genderOptions": [
+      "pinned",
+      "unpinned"
+    ],
+    "color": "#c9a8ff",
+    "legacyConnector": "MMC-24"
+  }
+]

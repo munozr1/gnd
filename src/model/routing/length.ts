@@ -5,6 +5,7 @@
 import { manhattan } from '../geometry';
 import { indexProject } from '../query';
 import type { Id, Project, Vec3 } from '../types';
+import { resolveEndsOf } from './owner';
 import { defaultLayerElevationMm, routePath3d, type IndexRange } from './path3d';
 import { dist3, polyline3dLength, portElevationMm, portFloorPos } from './positions';
 
@@ -82,17 +83,17 @@ export function routedLengthM(project: Project, linkId: Id): LinkLength | null {
 }
 
 /**
- * Estimate for an unrouted link: Manhattan floor distance between the port
- * positions plus the vertical from each port to the default overhead tray
- * elevation. Null when an end is unplaced.
+ * Estimate for an unrouted link (or an unrouted cable jacket, by cable id):
+ * Manhattan floor distance between the port positions plus the vertical from
+ * each port to the default overhead tray elevation. Null when an end is unplaced.
  */
 export function estimatedLengthM(project: Project, linkId: Id): LinkLength | null {
-  const link = indexProject(project).link(linkId);
-  if (!link) return null;
-  const pa = portFloorPos(project, link.a.componentId, link.a.portId);
-  const pb = portFloorPos(project, link.b.componentId, link.b.portId);
-  const ea = portElevationMm(project, link.a.componentId, link.a.portId);
-  const eb = portElevationMm(project, link.b.componentId, link.b.portId);
+  const ends = resolveEndsOf(indexProject(project), linkId);
+  if (!ends) return null;
+  const pa = ends.furcationA ?? portFloorPos(project, ends.a.componentId, ends.a.portId);
+  const pb = ends.furcationB ?? portFloorPos(project, ends.b.componentId, ends.b.portId);
+  const ea = portElevationMm(project, ends.a.componentId, ends.a.portId);
+  const eb = portElevationMm(project, ends.b.componentId, ends.b.portId);
   if (!pa || !pb || ea === null || eb === null) return null;
   const trayElev = defaultLayerElevationMm(project.room, 'overhead');
   const rise = Math.abs(trayElev - ea) / 1000;

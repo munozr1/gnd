@@ -5,6 +5,7 @@
 import type { Issue, Project } from '../types';
 import type { DrcRule } from './rule';
 import { bendRadius } from './rules/bend-radius';
+import { cableLengthShort } from './rules/cable-length-short';
 import { clearance } from './rules/clearance';
 import { managerOverfill } from './rules/manager-overfill';
 import { missingManager } from './rules/missing-manager';
@@ -37,6 +38,7 @@ export const drcRules: readonly DrcRule[] = [
   managerOverfill,
   missingWaterfall,
   trayClearance,
+  cableLengthShort,
 ];
 
 export const drcRuleById = (id: string): DrcRule | undefined => drcRules.find((r) => r.id === id);

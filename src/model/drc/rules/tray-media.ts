@@ -1,4 +1,5 @@
 import { indexProject } from '../../query';
+import { resolveRouteEnds, routeLabel } from '../../routing/owner';
 import type { Project, TrayKind } from '../../types';
 import { defineRule, type DrcFinding } from '../rule';
 
@@ -28,9 +29,9 @@ export const trayMedia = defineRule({
     const trays = new Map(project.trays.map((t) => [t.id, t] as const));
     const out: DrcFinding[] = [];
     for (const route of Object.values(project.routes)) {
-      const link = idx.link(route.linkId);
-      const cable = link ? idx.cableOf(link) : undefined;
-      if (!link || !cable) continue;
+      const ends = resolveRouteEnds(idx, route);
+      const cable = ends?.cableDef;
+      if (!ends || !cable) continue;
       const seen = new Set<string>();
       for (const seg of route.segments) {
         const tray = seg.trayId ? trays.get(seg.trayId) : undefined;
@@ -39,7 +40,7 @@ export const trayMedia = defineRule({
         if (trayKindAccepts(project, tray.kind).includes(cable.mediaClass)) continue;
         out.push({
           key: `${route.linkId}:${tray.id}`,
-          message: `${idx.linkLabel(link)}: ${cable.mediaClass} cable ${cable.name} rides ${tray.kind} tray ${tray.name ?? tray.id}`,
+          message: `${routeLabel(idx, ends)}: ${cable.mediaClass} cable ${cable.name} rides ${tray.kind} tray ${tray.name ?? tray.id}`,
           targets: [{ kind: 'route', id: route.linkId }, { kind: 'tray', id: tray.id }],
         });
       }

@@ -11,6 +11,7 @@ import { cn } from '@/ui/cn';
 import { EmptyState } from '@/ui/EmptyState';
 import { Icon } from '@/ui/icons';
 import { Input } from '@/ui/Input';
+import { CABLE_BUILDER_DIALOG } from '@/panels/cables/CableBuilderDialog';
 import { flattenGroups, groupLibrary, libraryEntries, type LibraryEntry } from './catalogView';
 
 export const CUSTOM_DEVICE_DIALOG = 'custom-device';
@@ -128,8 +129,12 @@ export function LibraryList({ onPick, autoFocus = false, className }: LibraryLis
           ))
         )}
       </div>
-      <div className="flex shrink-0 items-center gap-1 border-t border-border p-1">
-        <span className="flex-1 truncate px-1 text-[11px] text-fg-muted">{placing ? 'Click the canvas to place · Esc cancels' : 'Click a symbol to place it'}</span>
+      <div className="flex shrink-0 flex-wrap items-center gap-1 border-t border-border p-1">
+        <span className="min-w-[140px] flex-1 truncate px-1 text-[11px] text-fg-muted">{placing ? 'Click the canvas to place · Esc cancels' : 'Click a symbol to place it'}</span>
+        <Button size="sm" onClick={() => store.getState().openDialog(CABLE_BUILDER_DIALOG)} title="Define a fiber cable or trunk for this project">
+          <Icon name="plus" size={12} />
+          New cable…
+        </Button>
         <Button size="sm" onClick={() => store.getState().openDialog(CUSTOM_DEVICE_DIALOG)}>
           <Icon name="plus" size={12} />
           Custom device…

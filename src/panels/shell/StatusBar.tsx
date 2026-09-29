@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { linkRoutedByCable } from '@/model/routing';
 import type { Issue, Project } from '@/model/types';
 import { useIssues, useProject, useStore } from '@/store';
 import { cn } from '@/ui/cn';
@@ -8,10 +9,10 @@ import { setIssuesFilter } from './issuesFilter';
 import { useSaveState, type SaveState } from './saveState';
 import { useStatusBar } from './StatusBarContext';
 
-/** Links that have no route yet, over all links. */
+/** Links that have no route yet, over all links. A link realised by a cable whose jacket is routed counts as routed. */
 export function countUnrouted(project: Project): { unrouted: number; total: number } {
   let unrouted = 0;
-  for (const link of project.links) if (!project.routes[link.id]) unrouted++;
+  for (const link of project.links) if (!project.routes[link.id] && !linkRoutedByCable(project, link)) unrouted++;
   return { unrouted, total: project.links.length };
 }
 

@@ -5,6 +5,7 @@
  */
 import { catalogIndex, type CatalogIndex } from '@/catalog';
 import type {
+  Cable,
   CableDef,
   Component,
   FootprintPort,
@@ -29,6 +30,11 @@ export class ProjectIndex {
   readonly linksByComponent = new Map<Id, Link[]>();
   readonly componentsByRack = new Map<Id, Component[]>();
   readonly componentsBySheet = new Map<Id, Component[]>();
+  readonly cableById = new Map<Id, Cable>();
+  /** Links realised by each cable instance (`Link.cableId`). */
+  readonly linksByCable = new Map<Id, Link[]>();
+  /** 'componentId/portId' -> the cable plug occupying that port. */
+  readonly plugByPort = new Map<string, CablePlugRef>();
 
   constructor(readonly project: Project) {
     this.catalog = catalogIndex(project);
@@ -44,6 +50,19 @@ export class ProjectIndex {
         const arr = this.linksByComponent.get(end.componentId);
         if (arr) arr.push(l);
         else this.linksByComponent.set(end.componentId, [l]);
+      }
+      if (l.cableId !== undefined) {
+        const arr = this.linksByCable.get(l.cableId);
+        if (arr) arr.push(l);
+        else this.linksByCable.set(l.cableId, [l]);
+      }
+    }
+    // Older in-memory projects (tests, fixtures) may predate `cables`.
+    for (const c of project.cables ?? []) {
+      this.cableById.set(c.id, c);
+      for (const p of c.plugs) {
+        if (p.componentId === null || p.portId === null) continue;
+        this.plugByPort.set(`${p.componentId}/${p.portId}`, { cableId: c.id, side: p.side, leg: p.leg });
       }
     }
     for (const r of project.racks) this.rackById.set(r.id, r);
@@ -105,6 +124,18 @@ export class ProjectIndex {
   cableOf(link: Link): CableDef | undefined {
     return this.catalog.cable(link.cableDefId);
   }
+  /** An installed cable instance by id. */
+  cable(id: Id): Cable | undefined {
+    return this.cableById.get(id);
+  }
+  /** Links a cable instance realises, in project order. */
+  linksOfCable(cableId: Id): Link[] {
+    return this.linksByCable.get(cableId) ?? [];
+  }
+  /** Which cable leg (if any) is plugged into a port. */
+  plugAt(ref: { componentId: Id; portId: string }): CablePlugRef | undefined {
+    return this.plugByPort.get(`${ref.componentId}/${ref.portId}`);
+  }
 
   /**
    * Effective transceiver at a link end: the assigned optic, or the virtual
@@ -164,6 +195,13 @@ export class ProjectIndex {
         (l.b.componentId === componentId && l.b.portId === portId),
     );
   }
+}
+
+/** Identifies one leg of one side of a cable instance. */
+export interface CablePlugRef {
+  cableId: Id;
+  side: 'A' | 'B';
+  leg: number;
 }
 
 export const portKey = (end: LinkEnd): string =>

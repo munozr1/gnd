@@ -6,13 +6,14 @@ import * as THREE from 'three';
 import { registerCapture3D, capture3dPng } from '@/io/exports/screenshot3d';
 import { downloadBlob } from '@/io/exports/download';
 import { indexProject } from '@/model/query';
-import type { Project, SelectionItem, Tray } from '@/model/types';
+import type { Project, RoutingLayer, SelectionItem, Tray } from '@/model/types';
 import { store, useProject, useSelection, useViewer3dUi } from '@/store';
 import { registerShortcut } from '@/store/shortcuts';
 import { Button } from '@/ui/Button';
 import { Checkbox } from '@/ui/Checkbox';
 import { toast } from '@/ui/Toast';
 import { buildPhysicalScene, boxCorners, roomGrid, type BoxPart, type CablePart, type V3 } from './geometry';
+import type { BootPart, InstalledCable3d } from './cables3d';
 
 type Preset = 'iso' | 'top' | 'front' | 'rear';
 const sameTarget = (a: SelectionItem, b: SelectionItem) => a.kind === b.kind && 'id' in a && 'id' in b && a.id === b.id;
@@ -38,7 +39,7 @@ function Boxes({ parts, transparent = false }: { parts: BoxPart[]; transparent?:
   </instancedMesh>;
 }
 
-function cableGeometry(cable: CablePart) {
+function cableGeometry(cable: Pick<CablePart, 'points' | 'radius' | 'bendRadius'>) {
   const points = cable.points.map((p) => new THREE.Vector3(...p)).filter((p, i, all) => i === 0 || p.distanceTo(all[i - 1]!) > 1e-7);
   const curve = new THREE.CurvePath<THREE.Vector3>();
   if (points.length < 2) return new THREE.BufferGeometry();
@@ -61,6 +62,31 @@ function Cable({ cable }: { cable: CablePart }) {
   return <mesh geometry={geometry} onClick={(e) => select({ kind: 'link', id: cable.id }, e)}>
     <meshStandardMaterial color={selected ? '#ffffff' : cable.color} emissive={selected ? '#3c7b9e' : '#000000'} roughness={0.55} />
   </mesh>;
+}
+function Boot({ boot, selected, onClick }: { boot: BootPart; selected: boolean; onClick: (e: ThreeEvent<MouseEvent>) => void }) {
+  const quaternion = useMemo(() => new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(...boot.direction).normalize()), [boot]);
+  return <mesh position={boot.position} quaternion={quaternion} onClick={onClick}>
+    <cylinderGeometry args={[boot.radius, boot.radius, boot.length, 12]} /><meshStandardMaterial color={selected ? '#87cfff' : boot.color} roughness={0.8} />
+  </mesh>;
+}
+/** An installed cable: jacket, furcation boots, legs (brighter when hovered or the cable is selected) and connector shapes. Any part selects the whole cable. */
+function InstalledCableMesh({ cable, faint }: { cable: InstalledCable3d; faint: boolean }) {
+  const selected = useSelection().some((s) => s.kind === 'cable' && s.id === cable.id);
+  const [hovered, setHovered] = useState<string | null>(null);
+  const geometries = useMemo(() => ({ jacket: cableGeometry(cable.jacket), legs: cable.legs.map((leg) => cableGeometry(leg)) }), [cable]);
+  useEffect(() => () => { geometries.jacket.dispose(); geometries.legs.forEach((g) => g.dispose()); }, [geometries]);
+  const onClick = (e: ThreeEvent<MouseEvent>) => select(cable.target, e);
+  return <group>
+    <mesh geometry={geometries.jacket} onClick={onClick}><meshStandardMaterial color={selected ? '#ffffff' : cable.jacket.color} emissive={selected ? '#3c7b9e' : '#000000'} roughness={0.55} transparent={faint} opacity={faint ? 0.45 : 1} /></mesh>
+    {cable.boots.map((boot) => <Boot key={boot.side} boot={boot} selected={selected} onClick={onClick} />)}
+    {cable.legs.map((leg, i) => {
+      const key = `${leg.side}${leg.leg}`, bright = selected || hovered === key;
+      return <mesh key={key} geometry={geometries.legs[i]!} onClick={onClick} onPointerOver={(e) => { e.stopPropagation(); setHovered(key); }} onPointerOut={() => setHovered((h) => (h === key ? null : h))}>
+        <meshStandardMaterial color={bright ? '#ffffff' : leg.color} emissive={bright ? '#3c7b9e' : '#000000'} roughness={0.55} transparent={faint || !leg.plugged} opacity={faint ? 0.45 : leg.plugged ? 1 : 0.7} />
+      </mesh>;
+    })}
+    <Boxes parts={cable.connectors} />
+  </group>;
 }
 function Beam({ a, b, width, depth, color, target }: { a: V3; b: V3; width: number; depth: number; color: string; target?: SelectionItem }) {
   const vector = new THREE.Vector3(...b).sub(new THREE.Vector3(...a)), length = vector.length();
@@ -112,6 +138,7 @@ function CameraRig({ preset, frameCounter, data, project }: { preset: Preset; fr
       if (s.kind === 'component') return data.devices.filter((d) => sameTarget(s, d.target)).flatMap(boxCorners);
       if (s.kind === 'rack') return data.frames.filter((d) => sameTarget(s, d.target)).flatMap(boxCorners);
       if (s.kind === 'link') return data.cables.find((c) => c.id === s.id)?.points ?? [];
+      if (s.kind === 'cable') { const c = data.installed.find((x) => x.id === s.id); return c ? [...c.jacket.points, ...c.legs.flatMap((l) => l.points), ...c.connectors.flatMap(boxCorners)] : []; }
       return [];
     }) : [];
     const target = chosen.length ? new THREE.Box3().setFromPoints(chosen.map((p) => new THREE.Vector3(...p))).getCenter(new THREE.Vector3()) : new THREE.Vector3(...data.center);
@@ -139,12 +166,15 @@ export function Viewer3D() {
   const data = useMemo(() => buildPhysicalScene(project), [project]);
   const [preset, setPreset] = useState<Preset>('iso'), [frameCounter, setFrameCounter] = useState(0), [ready, setReady] = useState(false);
   useEffect(() => registerShortcut({ id: 'viewer.frame', keys: 'f', editor: 'viewer3d', description: 'Frame selection', handler: () => store.getState().patchViewer3d({ frameRequest: true }) }), []);
-  const cables = data.cables.filter((c) => c.routed && ui.showCables && (!c.layers.length || c.layers.some((l) => l === 'in-rack' || (l === 'overhead' ? ui.showOverhead : ui.showUnderfloor))));
+  const onShownLayers = (layers: RoutingLayer[]) => !layers.length || layers.some((l) => l === 'in-rack' || (l === 'overhead' ? ui.showOverhead : ui.showUnderfloor));
+  const cables = data.cables.filter((c) => c.routed && ui.showCables && onShownLayers(c.layers));
   const airwires = data.cables.filter((c) => !c.routed && ui.showAirwires);
+  // An unrouted installed cable is still an airwire: drawn faintly as its real geometry rather than as a dashed line.
+  const installed = data.installed.filter((c) => (c.routed ? ui.showCables && onShownLayers(c.layers) : ui.showAirwires));
   const screenshot = async () => { try { downloadBlob(await capture3dPng(), `${project.name}-3d.png`); } catch (e) { toast.error(e instanceof Error ? e.message : String(e)); } };
   const first = selection[0], idx = indexProject(project);
-  const selectedName = first?.kind === 'component' ? idx.component(first.id)?.ref : first?.kind === 'rack' ? idx.rack(first.id)?.name : first?.kind === 'link' ? idx.link(first.id)?.label ?? 'Cable' : first?.kind;
-  return <div data-editor="viewer3d" className="flex h-full min-h-0 flex-col" data-testid="viewer3d" data-ready={ready} data-device-count={data.devices.length} data-rack-count={project.racks.length} data-cable-count={cables.length} data-airwire-count={airwires.length}>
+  const selectedName = first?.kind === 'component' ? idx.component(first.id)?.ref : first?.kind === 'rack' ? idx.rack(first.id)?.name : first?.kind === 'link' ? idx.link(first.id)?.label ?? 'Cable' : first?.kind === 'cable' ? idx.cable(first.id)?.label ?? 'Cable' : first?.kind;
+  return <div data-editor="viewer3d" className="flex h-full min-h-0 flex-col" data-testid="viewer3d" data-ready={ready} data-device-count={data.devices.length} data-rack-count={project.racks.length} data-cable-count={cables.length} data-airwire-count={airwires.length} data-installed-count={installed.length}>
     <div role="toolbar" aria-label="3D controls" className="flex min-h-8 shrink-0 flex-wrap items-center gap-1 border-b border-border bg-panel px-2">
       {(['iso', 'top', 'front', 'rear'] as const).map((v) => <Button key={v} active={preset === v} onClick={() => { setPreset(v); setFrameCounter((n) => n + 1); }}>{v === 'iso' ? 'Isometric' : v.charAt(0).toUpperCase() + v.slice(1)}</Button>)}
       <Button onClick={() => { setFrameCounter((n) => n + 1); }}>Fit site</Button>
@@ -162,13 +192,14 @@ export function Viewer3D() {
           {ui.showDoors && <Boxes parts={data.doors} transparent />}
           {project.trays.filter((t) => t.layer === 'underfloor' ? ui.showUnderfloor : ui.showOverhead).map((tray) => <TrayMesh key={tray.id} tray={tray} ceiling={project.room.ceilingMm / 1000} />)}
           {cables.map((cable) => <Cable key={cable.id} cable={cable} />)}
+          {installed.map((cable) => <InstalledCableMesh key={cable.id} cable={cable} faint={!cable.routed} />)}
           {airwires.map((cable) => <Line key={cable.id} points={cable.points} color={cable.color} transparent opacity={0.25} lineWidth={0.7} dashed dashSize={0.035} gapSize={0.025} onClick={(e) => select({ kind: 'link', id: cable.id }, e)} />)}
-          {data.labels.map((label) => <Html key={label.id} position={label.position} center zIndexRange={[10, 0]}><button className="rounded border border-[#527083] bg-[#142532]/90 px-2 py-0.5 text-[11px] text-[#c4e1ed]" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); store.getState().select({ kind: 'rack', id: label.id }); }}>{label.text}</button></Html>)}
+          {data.labels.map((label) => <Html key={label.id} position={label.position} center zIndexRange={[10, 0]}><button className="whitespace-nowrap rounded border border-[#527083] bg-[#142532]/90 px-2 py-0.5 text-[11px] text-[#c4e1ed]" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); store.getState().select({ kind: 'rack', id: label.id }); }}>{label.text}</button></Html>)}
           <CameraRig project={project} data={data} preset={preset} frameCounter={frameCounter} />
         </Canvas>
       </Suspense></ViewerBoundary>
-      <div className="absolute bottom-3 left-3 rounded border border-border bg-panel/95 px-3 py-2 text-xs text-fg-muted">{project.racks.length} racks · {data.devices.length} devices · {data.cables.filter((c) => c.routed).length} routed cables<br />Drag to orbit · Right-drag to pan · Scroll to zoom</div>
-      {first && <div className="absolute right-3 top-3 flex items-center gap-2 rounded border border-border bg-panel/95 p-2 text-xs"><span>{selectedName}</span><Button onClick={() => store.getState().revealSelection(selection, 'layout')}>Show in layout</Button>{(first.kind === 'component' || first.kind === 'link') && <Button onClick={() => store.getState().revealSelection(selection, 'schematic')}>Show in schematic</Button>}</div>}
+      <div className="absolute bottom-3 left-3 rounded border border-border bg-panel/95 px-3 py-2 text-xs text-fg-muted">{project.racks.length} racks · {data.devices.length} devices · {data.cables.filter((c) => c.routed).length + data.installed.filter((c) => c.routed).length} routed cables<br />Drag to orbit · Right-drag to pan · Scroll to zoom</div>
+      {first && <div className="absolute right-3 top-3 flex items-center gap-2 rounded border border-border bg-panel/95 p-2 text-xs"><span>{selectedName}</span><Button onClick={() => store.getState().revealSelection(selection, 'layout')}>Show in layout</Button>{(first.kind === 'component' || first.kind === 'link' || first.kind === 'cable') && <Button onClick={() => store.getState().revealSelection(selection, 'schematic')}>Show in schematic</Button>}</div>}
       {!project.racks.length && <p className="pointer-events-none absolute inset-x-0 top-1/2 text-center text-fg-muted">Place racks and devices in Layout to build the 3D scene.</p>}
     </div>
   </div>;

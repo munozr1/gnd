@@ -4,10 +4,19 @@
  * upgrading older versions step by step and filling defaults for optional
  * fields that older files may lack.
  */
+import { migrateLegacyCableDef } from '@/model/cables/legacy';
 import { defaultRoom, defaultSettings, ROOT_SHEET_ID } from '@/model/factories';
-import type { Project, Sheet } from '@/model/types';
+import type { CableDef, Project, Sheet } from '@/model/types';
 
-export const CURRENT_PROJECT_VERSION = 1 as const;
+/**
+ * 1 — original schema. 2 — configurable fiber cables: `Project.cables`,
+ * `CableDef` fiber fields (`fiberCount` / `fiberType` / `sideA` / `sideB` /
+ * `polarity` / `strandMap` / `breakoutLengthM`), `Link.cableId` and
+ * `Route.owner`. Files written by the interim dev builds still say 1 while
+ * already carrying some of these fields; the 1 → 2 step keeps whatever is
+ * present and fills the rest.
+ */
+export const CURRENT_PROJECT_VERSION = 2 as const;
 
 export class ProjectParseError extends Error {
   constructor(message: string) {
@@ -21,7 +30,46 @@ type Raw = Record<string, unknown>;
 const isObject = (v: unknown): v is Raw => typeof v === 'object' && v !== null && !Array.isArray(v);
 
 /** Version-to-version upgrade steps, keyed by the version they upgrade FROM. */
-const steps: Record<number, (raw: Raw) => Raw> = {};
+const steps: Record<number, (raw: Raw) => Raw> = {
+  1: v1ToV2,
+};
+
+/** A custom catalog cable as a v1 file holds it: at least the legacy fiber vocabulary. */
+const isLegacyCableLike = (item: unknown): item is CableDef =>
+  isObject(item) && typeof item.media === 'string' && typeof item.endA === 'string' && typeof item.endB === 'string';
+
+/**
+ * v1 → v2 (configurable fiber cables):
+ * - `cables` (installed cable instances) defaults to `[]`;
+ * - every custom-catalog fiber cable gains the fiber fields derived from its
+ *   legacy `media` / `endA` / `endB` / `breakout` (`migrateLegacyCableDef`:
+ *   OM4 LC ↔ LC becomes 2F LC-duplex ↔ LC-duplex, MPO-12 → LC × 4 becomes 8F
+ *   MPO-8 → 4×LC-duplex, …); definitions that already carry them, and copper /
+ *   DAC / AOC ones, are untouched;
+ * - links are unchanged (`Link.cableId` stays absent unless a cable owns it);
+ * - `Route.owner` defaults to 'link': an absent owner already reads as 'link'
+ *   (`routeOwner()`), a jacket route keeps `'cable'`, anything else is dropped.
+ */
+function v1ToV2(raw: Raw): Raw {
+  const r: Raw = { ...raw };
+  if (!Array.isArray(r.cables)) r.cables = [];
+  if (isObject(r.customCatalog) && Array.isArray(r.customCatalog.cables)) {
+    r.customCatalog = {
+      ...r.customCatalog,
+      cables: r.customCatalog.cables.map((def) => (isLegacyCableLike(def) ? migrateLegacyCableDef(def) : def)),
+    };
+  }
+  if (isObject(r.routes)) {
+    const routes: Raw = {};
+    for (const [key, route] of Object.entries(r.routes)) {
+      if (!isObject(route)) continue;
+      const { owner, ...rest } = route;
+      routes[key] = owner === 'cable' ? { ...rest, owner } : rest;
+    }
+    r.routes = routes;
+  }
+  return r;
+}
 
 export function migrate(raw: unknown, now: string = new Date().toISOString()): Project {
   if (!isObject(raw)) throw new ProjectParseError('Project must be a JSON object');
@@ -40,7 +88,7 @@ export function migrate(raw: unknown, now: string = new Date().toISOString()): P
     if (!step) throw new ProjectParseError(`No migration from project version ${v}`);
     r = step(r);
   }
-  return normalizeV1(r, now);
+  return normalize(r, now);
 }
 
 function requireString(r: Raw, key: string): string {
@@ -91,7 +139,8 @@ const isLinkEnd = (v: unknown): boolean =>
 const isLinkLike = (item: unknown): item is Project['links'][number] =>
   hasId(item) && isLinkEnd((item as Raw).a) && isLinkEnd((item as Raw).b);
 
-function normalizeV1(r: Raw, now: string): Project {
+/** Fill defaults for the optional fields a file at the current version may still lack (the shape is checked, not migrated, here). */
+function normalize(r: Raw, now: string): Project {
   const id = requireString(r, 'id');
   const name = requireString(r, 'name');
   const sheets = requireArray(r, 'sheets', isSheetLike);
@@ -120,6 +169,8 @@ function normalizeV1(r: Raw, now: string): Project {
     sheets: sheets.length > 0 ? sheets : [{ id: ROOT_SHEET_ID, name: 'Root', parentId: null }],
     components,
     links,
+    // Cable instances arrived after v1 files were already in the wild; older files simply have none.
+    cables: optionalArray(r, 'cables'),
     room: { ...defaultRoom(), ...optionalObject(r, 'room') } as Project['room'],
     racks: optionalArray(r, 'racks'),
     placements: optionalArray(r, 'placements'),

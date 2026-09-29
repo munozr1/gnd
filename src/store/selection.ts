@@ -65,6 +65,8 @@ export function selectionItemExists(project: Project, item: SelectionItem): bool
       return project.keepouts.some((k) => k.id === item.id);
     case 'accessory':
       return project.accessories.some((a) => a.id === item.id);
+    case 'cable':
+      return idx.cableById.has(item.id);
     case 'waypoint': {
       const seg = project.routes[item.routeId]?.segments[item.segmentIndex];
       return seg !== undefined && seg.points.some((w) => w.id === item.waypointId);

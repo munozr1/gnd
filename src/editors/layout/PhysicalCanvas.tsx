@@ -20,9 +20,13 @@ interface Props {
   onDoubleClick?: (point: Vec2) => void;
   onCancel?: () => void;
   onDrop?: (point: Vec2, data: DataTransfer) => void;
+  /** An HTML5 drag is over the canvas at `point` (fired from dragover; `data.types` is readable, `getData` is not until the drop). */
+  onDragMove?: (point: Vec2, data: DataTransfer) => void;
+  /** The drag left the canvas (or was cancelled) without dropping. */
+  onDragLeave?: () => void;
   children?: ReactNode;
 }
-export function PhysicalCanvas({ testId, label, bounds, resetKey, paint, frame, onFrame, onDown, onMove, onUp, onDoubleClick, onCancel, onDrop, children }: Props) {
+export function PhysicalCanvas({ testId, label, bounds, resetKey, paint, frame, onFrame, onDown, onMove, onUp, onDoubleClick, onCancel, onDrop, onDragMove, onDragLeave, children }: Props) {
   const host = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [view, setView] = useState<Viewport>({ x: 0, y: 0, scale: 0.1 });
@@ -79,7 +83,9 @@ export function PhysicalCanvas({ testId, label, bounds, resetKey, paint, frame, 
     onPointerUp={(e) => { if (!pan.current) onUp?.(point(e)); pan.current = null; if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId); }}
     onPointerCancel={() => { pan.current = null; onCancel?.(); }}
     onDoubleClick={(e) => onDoubleClick?.(point(e))}
-    onDragOver={(e) => { if (onDrop) e.preventDefault(); }}
+    onDragOver={(e) => { if (onDrop) { e.preventDefault(); onDragMove?.(point(e), e.dataTransfer); } }}
+    // dragleave also fires when moving onto a child; only report a real exit.
+    onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) onDragLeave?.(); }}
     onDrop={(e) => { e.preventDefault(); onDrop?.(point(e), e.dataTransfer); }}>
     {size.width > 0 && size.height > 0 && <Stage width={size.width} height={size.height} x={view.x} y={view.y} scaleX={view.scale} scaleY={view.scale} listening={false}>
       <Layer listening={false}><Shape sceneFunc={(ctx) => paint(ctx._context, view.scale)} /></Layer>

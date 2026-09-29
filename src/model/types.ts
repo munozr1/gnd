@@ -117,6 +117,45 @@ export interface TransceiverDef {
   lanes: number;
 }
 
+export type FiberType = 'OS2' | 'OM3' | 'OM4' | 'OM5';
+
+/**
+ * Fiber polarity method: 'A' straight, 'B' reversed within each multi-fiber
+ * connector, 'C' pair-flipped. See src/model/cables/strandMap.ts for the
+ * exact rule, including how a duplex cord is always A-to-B.
+ */
+export type CablePolarity = 'A' | 'B' | 'C';
+
+/**
+ * One end of a fiber cable as STORED: the connector catalog id (src/catalog/
+ * connectors.json) plus optional per-leg label / colour overrides by leg
+ * index. The legs themselves are DERIVED from fiberCount and the connector's
+ * fibers-per-leg (`deriveSides`), never stored.
+ */
+export interface CableSideDef {
+  connector: string;
+  legLabels?: string[];
+  legColors?: string[];
+}
+
+/** One fiber of a cable: the (leg, position) it lands on at each end. Legs are 0-based, positions 1-based. */
+export interface StrandLink {
+  a: { leg: number; pos: number };
+  b: { leg: number; pos: number };
+}
+
+/**
+ * A cable type. Fiber cables carry the `fiberCount` / `fiberType` / `sideA` /
+ * `sideB` / `polarity` fields, from which legs, kind (straight vs trunk),
+ * channels and the strand map are derived on demand by src/model/cables.
+ *
+ * The legacy fields `media`, `mediaClass`, `endA`, `endB`, `color`,
+ * `diameterMm` and `breakout` STAY POPULATED in the old vocabulary ('OM4',
+ * 'LC', 'MPO-12', fanout) because the ERC connector / media rules, BOM and
+ * exports read them; for a fiber cable they are regenerated from the fiber
+ * fields by `legacyFieldsFor` and the catalog keeps them in lock-step.
+ * Copper, DAC and AOC cables have only the legacy fields.
+ */
 export interface CableDef {
   id: string;
   name: string;
@@ -134,6 +173,19 @@ export interface CableDef {
   breakout?: { fanout: number };
   /** For DAC/AOC: the virtual transceiver that fills both cages. */
   integrated?: { formFactor: PortType; speedGbps: number; reachM: number };
+
+  // --- Fiber cable definition (see src/model/cables) ---
+  /** Number of fibers (strands) in the cable: 2, 8, 12, 16, 24, 32, 48, 72, 96, 144 or custom (even). */
+  fiberCount?: number;
+  fiberType?: FiberType;
+  sideA?: CableSideDef;
+  sideB?: CableSideDef;
+  /** Defaults to 'B' when either side is a multi-fiber connector, else 'A'. */
+  polarity?: CablePolarity;
+  /** Present ONLY when the user customised it; otherwise derived from the sides + polarity. */
+  strandMap?: StrandLink[];
+  /** Jacket-to-legs breakout length for a trunk; default 0.5 m. */
+  breakoutLengthM?: number;
 }
 
 export type TrayKind = 'fiber-runway' | 'ladder' | 'basket';
@@ -148,12 +200,17 @@ export interface TrayDef {
   accepts: ('fiber' | 'copper')[];
 }
 
+/** A 'patch-frame' is a free-standing frame that holds patch panels (its own rack, placed anywhere on the floor). */
+export type RackKind = 'rack' | 'patch-frame';
+
 export interface RackDef {
   id: string;
   name: string;
   heightU: number;
   widthMm: number;
   depthMm: number;
+  /** undefined = 'rack'. */
+  kind?: RackKind;
 }
 
 export interface AccessoryDef {
@@ -210,6 +267,41 @@ export interface Link {
   label?: string;
   /** Schematic wire geometry only (intermediate elbow points, excluding pin ends). */
   sch: { wirePoints: Vec2[] };
+  /** Set when a `Cable` instance realises this link (one link per channel plugged at both ends); see src/model/cables/instances.ts. */
+  cableId?: Id;
+}
+
+// ---------------------------------------------------------------------------
+// Cable instances (see src/model/cables/instances.ts)
+// ---------------------------------------------------------------------------
+
+/**
+ * One leg of one end of an installed cable and the port it is plugged into.
+ * A cable always carries one entry per leg per side; `componentId` /
+ * `portId` are null while the leg is unassigned (allowed: a sketch).
+ */
+export interface CablePlug {
+  side: 'A' | 'B';
+  /** Leg index on that side, 0-based (see `deriveSides`). */
+  leg: number;
+  componentId: Id | null;
+  portId: string | null;
+}
+
+/**
+ * An installed cable: an instance of a `CableDef`. The cable OWNS its links:
+ * every channel whose fibers are plugged at both ends is realised as a plan
+ * `Link` carrying `link.cableId`, so ERC / DRC / F8 / exports keep working on
+ * links while renderers group them by cable to draw the jacket and fan-out.
+ */
+export interface Cable {
+  id: Id;
+  label: string;
+  cableDefId: string;
+  plugs: CablePlug[];
+  lengthM?: number;
+  /** Furcation (breakout) point per side on the floor plan, mm; pinned once the user drags it. */
+  furcation?: Partial<Record<'A' | 'B', { pos: Vec2; pinned: boolean }>>;
 }
 
 /** Hierarchical sheets: 'Root', 'Spine', 'Pod A'. */
@@ -244,6 +336,14 @@ export interface Rack {
   depthMm: number;
   /** Row label for place-by-rule ('A', 'B'). */
   row?: string;
+  /** undefined = 'rack'. Readers use `rack.kind ?? 'rack'`; writers never store the default. */
+  kind?: RackKind;
+  /**
+   * Optional docking of a patch frame to a device rack: the frame then keeps
+   * its position relative to that rack when the rack moves. Free-standing
+   * frames (the default) simply have no `attachedTo`.
+   */
+  attachedTo?: { rackId: Id; side: Side };
 }
 
 /** A component placed in a rack. */
@@ -325,7 +425,10 @@ export interface RouteSegment {
 }
 
 export interface Route {
+  /** The `Project.routes` key: the link id, or the cable id when `owner === 'cable'` (the route is then the cable's jacket). */
   linkId: Id;
+  /** Who the route belongs to; undefined means 'link'. See src/model/routing/owner.ts. */
+  owner?: 'link' | 'cable';
   aRack: InRackPath;
   bRack: InRackPath;
   /**
@@ -356,7 +459,8 @@ export type IssueTarget =
   | { kind: 'rack'; id: Id }
   | { kind: 'route'; id: Id }
   | { kind: 'tray'; id: Id }
-  | { kind: 'sheet'; id: Id };
+  | { kind: 'sheet'; id: Id }
+  | { kind: 'cable'; id: Id };
 
 export interface Issue {
   id: string;
@@ -403,7 +507,8 @@ export interface SyncState {
 export interface Project {
   id: Id;
   name: string;
-  version: 1;
+  /** Schema version written by this build; see src/io/persistence/migrations.ts (v2 = configurable fiber cables). */
+  version: 1 | 2;
   rev: string;
   createdAt: string;
   updatedAt: string;
@@ -412,6 +517,8 @@ export interface Project {
   sheets: Sheet[];
   components: Component[];
   links: Link[];
+  /** Installed cable instances; each owns the links it realises (`Link.cableId`). */
+  cables: Cable[];
 
   // physical
   room: Room;
@@ -477,6 +584,7 @@ export type SelectionItem =
   | { kind: 'waypoint'; routeId: Id; segmentIndex: number; waypointId: Id }
   | { kind: 'sheet'; id: Id }
   | { kind: 'keepout'; id: Id }
-  | { kind: 'accessory'; id: Id };
+  | { kind: 'accessory'; id: Id }
+  | { kind: 'cable'; id: Id };
 
 export type EditorId = 'schematic' | 'layout' | 'viewer3d';

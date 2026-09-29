@@ -1,4 +1,5 @@
 import { indexProject } from '../../query';
+import { resolveRouteEnds, routeLabel } from '../../routing/owner';
 import { portPlacement } from '../../routing/positions';
 import { defineRule, type DrcFinding } from '../rule';
 
@@ -13,19 +14,21 @@ export const wrongFace = defineRule({
     const accessories = new Map(project.accessories.map((a) => [a.id, a] as const));
     const out: DrcFinding[] = [];
     for (const route of Object.values(project.routes)) {
-      const link = idx.link(route.linkId);
-      if (!link) continue;
-      for (const [endRef, path, end] of [
-        [link.a, route.aRack, 'A'],
-        [link.b, route.bRack, 'B'],
+      const ends = resolveRouteEnds(idx, route);
+      if (!ends) continue;
+      for (const [endRef, path, end, furcation] of [
+        [ends.a, route.aRack, 'A', ends.furcationA],
+        [ends.b, route.bRack, 'B', ends.furcationB],
       ] as const) {
+        // A cable jacket that fans out ends at its furcation point on the floor; it enters no rack on that side.
+        if (furcation) continue;
         const entry = path.entry ? accessories.get(path.entry) : undefined;
         if (!entry?.face) continue;
         const info = portPlacement(project, endRef.componentId, endRef.portId);
         if (!info || info.face === entry.face) continue;
         out.push({
           key: `${route.linkId}:${end}`,
-          message: `${idx.linkLabel(link)}: end ${end} enters rack ${info.rack.name} through the ${entry.face} top entry but ${idx.endLabel(endRef)} is on the ${info.face} face`,
+          message: `${routeLabel(idx, ends)}: end ${end} enters rack ${info.rack.name} through the ${entry.face} top entry but ${idx.endLabel(endRef)} is on the ${info.face} face`,
           targets: [{ kind: 'route', id: route.linkId }, { kind: 'component', id: endRef.componentId, portId: endRef.portId }],
         });
       }

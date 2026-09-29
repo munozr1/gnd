@@ -49,6 +49,13 @@ export type ViewportRequest =
 
 export type SchematicTool = 'select' | 'wire' | 'label' | 'breakout' | 'move';
 
+/** The cable leg the connecting flow is assigning next (see src/panels/cables). */
+export interface CablingState {
+  cableId: Id;
+  side: 'A' | 'B';
+  leg: number;
+}
+
 export interface SchematicUi {
   /** SymbolDef id being placed from the library (ghost follows the cursor), or null. */
   placing: string | null;
@@ -56,6 +63,8 @@ export interface SchematicUi {
   viewportRequest: ViewportRequest | null;
   /** Component to focus in the model-assignment dialog. */
   assignFocus: Id | null;
+  /** Cable connecting flow in progress: pins are plugged into this leg next; null when idle. */
+  cabling: CablingState | null;
 }
 
 export type LayoutTool = 'select' | 'route' | 'room' | 'keepout' | 'tray' | 'rack' | 'measure';
@@ -134,6 +143,7 @@ export const initialUi = (): UiState => ({
     tool: 'select',
     viewportRequest: null,
     assignFocus: null,
+    cabling: null,
   },
   layout: {
     view: 'floor',
@@ -224,8 +234,10 @@ const errorMessage = (err: unknown): string => (err instanceof Error ? err.messa
 function uiAfterProjectChange(ui: UiState, project: Project): UiState {
   const selection = pruneSelection(project, ui.selection);
   const hovered = ui.hovered && !selectionItemExists(project, ui.hovered) ? null : ui.hovered;
-  if (selection === ui.selection && hovered === ui.hovered) return ui;
-  return { ...ui, selection, hovered };
+  // The connecting flow ends when its cable disappears (undo of the connect, delete).
+  const cabling = ui.schematic.cabling && !project.cables.some((c) => c.id === ui.schematic.cabling!.cableId) ? null : ui.schematic.cabling;
+  if (selection === ui.selection && hovered === ui.hovered && cabling === ui.schematic.cabling) return ui;
+  return { ...ui, selection, hovered, ...(cabling !== ui.schematic.cabling ? { schematic: { ...ui.schematic, cabling } } : {}) };
 }
 
 export const useStore = create<StoreState>()((set, get) => {
@@ -286,6 +298,7 @@ export const useStore = create<StoreState>()((set, get) => {
             activeSheetId: rootSheet?.id ?? ROOT_SHEET_ID,
             selection: [],
             hovered: null,
+            schematic: { ...s.ui.schematic, cabling: null },
             issues: { erc: [], drc: [] },
             lastError: null,
           },
@@ -346,6 +359,7 @@ export const useStore = create<StoreState>()((set, get) => {
       editor === 'schematic' ? patchSchematic({ viewportRequest: request }) : patchLayout({ viewportRequest: request }),
     revealSelection: (items, editor) => {
       const list = dedupeSelection(items);
+      // Cables, components, links and sheets live in the schematic; everything physical in the layout.
       const target: EditorId =
         editor ??
         (list.some((i) => i.kind === 'rack' || i.kind === 'tray' || i.kind === 'waypoint' || i.kind === 'keepout' || i.kind === 'accessory')

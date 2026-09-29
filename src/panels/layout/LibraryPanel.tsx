@@ -16,6 +16,7 @@ import { Button } from '@/ui/Button';
 import { NumberInput } from '@/ui/Input';
 import { Select } from '@/ui/Select';
 import { toast } from '@/ui/Toast';
+import { CableLibrarySection } from '@/panels/cables/CableLibrarySection';
 import { Field, Note, Section, run } from './shared';
 
 const TRAY_KIND_LABEL: Record<TrayKind, string> = { 'fiber-runway': 'Fiber runway', ladder: 'Ladder rack', basket: 'Wire basket' };
@@ -74,6 +75,11 @@ function RackLibrary() {
       {defs.map((d) => (
         <div key={d.id} className="flex items-center gap-1" data-rack-def={d.id}>
           <span className="min-w-0 flex-1 truncate text-[12px]">{d.name}</span>
+          {d.kind === 'patch-frame' && (
+            <Badge tone="warning" title="Free-standing patch frame: a rack of its own for patch panels">
+              frame
+            </Badge>
+          )}
           <span className="shrink-0 text-[11px] text-fg-muted">
             {d.widthMm}×{d.depthMm}
           </span>
@@ -100,6 +106,7 @@ function RackLibrary() {
         </div>
       </div>
       <Note>Place: a ghost follows the cursor on the floor plan; racks snap to the {project.room.gridMm} mm grid.</Note>
+      <Note>Patch frames are free-standing racks for patch panels. Dropping a device from the Unplaced bin onto empty floor gives it its own frame.</Note>
     </Section>
   );
 }
@@ -245,6 +252,7 @@ export function LibraryPanel() {
       <RackLibrary />
       <TrayLibrary />
       <AccessoryLibrary />
+      <CableLibrarySection />
       <KeepoutTool />
     </div>
   );

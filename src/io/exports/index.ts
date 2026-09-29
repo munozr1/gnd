@@ -18,6 +18,7 @@ import { schematicFileName, schematicSheetsHtml, schematicSheetsSvg, schematicSv
 export * from './csv';
 export * from './common';
 export * from './linkList';
+export * from './cableInstances';
 export * from './cableSchedule';
 export * from './bom';
 export * from './cableLabels';
@@ -88,21 +89,21 @@ export const exportRegistry: readonly ExportEntry[] = [
     id: 'cable-schedule-csv',
     name: 'Cable schedule (CSV)',
     group: 'Lists',
-    description: 'Rack / U / port at both ends, cable type, stock length and layer path per cable.',
+    description: 'Rack / U / port at both ends, cable type, stock length and layer path per cable; installed trunks with one sub-row per leg.',
     run: (p) => ({ filename: `${base(p)}-cable-schedule.csv`, blob: csv(cableScheduleCsv(p)) }),
   },
   {
     id: 'bom-csv',
     name: 'BOM (CSV)',
     group: 'Lists',
-    description: 'Racks, devices, optics, cables by length, trays and accessories.',
+    description: 'Racks, devices, optics, cables by definition and length, trays and accessories.',
     run: (p) => ({ filename: `${base(p)}-bom.csv`, blob: csv(bomCsv(p)) }),
   },
   {
     id: 'cable-labels-csv',
     name: 'Cable labels (CSV)',
     group: 'Lists',
-    description: 'Two label rows per cable (one per end) for label printers.',
+    description: 'One label per cable end, plus one per leg end and jacket end of installed trunks, for label printers.',
     run: (p) => ({ filename: `${base(p)}-cable-labels.csv`, blob: csv(cableLabelsCsv(p)) }),
   },
   {

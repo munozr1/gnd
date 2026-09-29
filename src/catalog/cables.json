@@ -8,7 +8,16 @@
     "endB": "LC",
     "color": "#2dd4bf",
     "bendRadiusMm": 30,
-    "diameterMm": 2
+    "diameterMm": 2,
+    "fiberCount": 2,
+    "fiberType": "OM4",
+    "sideA": {
+      "connector": "LC-duplex"
+    },
+    "sideB": {
+      "connector": "LC-duplex"
+    },
+    "polarity": "A"
   },
   {
     "id": "cbl.os2-duplex",
@@ -19,7 +28,16 @@
     "endB": "LC",
     "color": "#facc15",
     "bendRadiusMm": 30,
-    "diameterMm": 2
+    "diameterMm": 2,
+    "fiberCount": 2,
+    "fiberType": "OS2",
+    "sideA": {
+      "connector": "LC-duplex"
+    },
+    "sideB": {
+      "connector": "LC-duplex"
+    },
+    "polarity": "A"
   },
   {
     "id": "cbl.om4-mpo-trunk",
@@ -30,7 +48,16 @@
     "endB": "MPO-12",
     "color": "#2dd4bf",
     "bendRadiusMm": 40,
-    "diameterMm": 3.5
+    "diameterMm": 3.5,
+    "fiberCount": 12,
+    "fiberType": "OM4",
+    "sideA": {
+      "connector": "MPO-12"
+    },
+    "sideB": {
+      "connector": "MPO-12"
+    },
+    "polarity": "B"
   },
   {
     "id": "cbl.os2-mpo-trunk",
@@ -41,7 +68,16 @@
     "endB": "MPO-12",
     "color": "#facc15",
     "bendRadiusMm": 40,
-    "diameterMm": 3.5
+    "diameterMm": 3.5,
+    "fiberCount": 12,
+    "fiberType": "OS2",
+    "sideA": {
+      "connector": "MPO-12"
+    },
+    "sideB": {
+      "connector": "MPO-12"
+    },
+    "polarity": "B"
   },
   {
     "id": "cbl.mpo-breakout",
@@ -55,7 +91,171 @@
     "diameterMm": 3.5,
     "breakout": {
       "fanout": 4
-    }
+    },
+    "fiberCount": 8,
+    "fiberType": "OM4",
+    "sideA": {
+      "connector": "MPO-8"
+    },
+    "sideB": {
+      "connector": "LC-duplex"
+    },
+    "polarity": "B"
+  },
+  {
+    "id": "cbl.om4-8f-mpo8-4lc",
+    "name": "8F OM4 MPO-8 → 4×LC-duplex",
+    "media": "OM4",
+    "mediaClass": "fiber",
+    "endA": "MPO-12",
+    "endB": "LC",
+    "color": "#2dd4bf",
+    "bendRadiusMm": 30,
+    "diameterMm": 3,
+    "breakout": {
+      "fanout": 4
+    },
+    "fiberCount": 8,
+    "fiberType": "OM4",
+    "sideA": {
+      "connector": "MPO-8"
+    },
+    "sideB": {
+      "connector": "LC-duplex"
+    },
+    "polarity": "B"
+  },
+  {
+    "id": "cbl.om4-12f-mpo12-6lc",
+    "name": "12F OM4 MPO-12 → 6×LC-duplex",
+    "media": "OM4",
+    "mediaClass": "fiber",
+    "endA": "MPO-12",
+    "endB": "LC",
+    "color": "#2dd4bf",
+    "bendRadiusMm": 35,
+    "diameterMm": 3.5,
+    "breakout": {
+      "fanout": 6
+    },
+    "fiberCount": 12,
+    "fiberType": "OM4",
+    "sideA": {
+      "connector": "MPO-12"
+    },
+    "sideB": {
+      "connector": "LC-duplex"
+    },
+    "polarity": "B"
+  },
+  {
+    "id": "cbl.om4-24f-mpo24-12lc",
+    "name": "24F OM4 MPO-24 → 12×LC-duplex",
+    "media": "OM4",
+    "mediaClass": "fiber",
+    "endA": "MPO-24",
+    "endB": "LC",
+    "color": "#2dd4bf",
+    "bendRadiusMm": 50,
+    "diameterMm": 5,
+    "breakout": {
+      "fanout": 12
+    },
+    "fiberCount": 24,
+    "fiberType": "OM4",
+    "sideA": {
+      "connector": "MPO-24"
+    },
+    "sideB": {
+      "connector": "LC-duplex"
+    },
+    "polarity": "B"
+  },
+  {
+    "id": "cbl.om4-16f-mmc16-2mpo8",
+    "name": "16F OM4 MMC-16 → 2×MPO-8",
+    "media": "OM4",
+    "mediaClass": "fiber",
+    "endA": "MMC-16",
+    "endB": "MPO-12",
+    "color": "#2dd4bf",
+    "bendRadiusMm": 40,
+    "diameterMm": 4,
+    "breakout": {
+      "fanout": 2
+    },
+    "fiberCount": 16,
+    "fiberType": "OM4",
+    "sideA": {
+      "connector": "MMC-16"
+    },
+    "sideB": {
+      "connector": "MPO-8"
+    },
+    "polarity": "B"
+  },
+  {
+    "id": "cbl.os2-24f-mpo24-2mpo12",
+    "name": "24F OS2 MPO-24 → 2×MPO-12",
+    "media": "OS2",
+    "mediaClass": "fiber",
+    "endA": "MPO-24",
+    "endB": "MPO-12",
+    "color": "#facc15",
+    "bendRadiusMm": 50,
+    "diameterMm": 5,
+    "breakout": {
+      "fanout": 2
+    },
+    "fiberCount": 24,
+    "fiberType": "OS2",
+    "sideA": {
+      "connector": "MPO-24"
+    },
+    "sideB": {
+      "connector": "MPO-12"
+    },
+    "polarity": "B"
+  },
+  {
+    "id": "cbl.om4-8f-mpo8-mpo8",
+    "name": "8F OM4 MPO-8 ↔ MPO-8",
+    "media": "OM4",
+    "mediaClass": "fiber",
+    "endA": "MPO-12",
+    "endB": "MPO-12",
+    "color": "#2dd4bf",
+    "bendRadiusMm": 30,
+    "diameterMm": 3,
+    "fiberCount": 8,
+    "fiberType": "OM4",
+    "sideA": {
+      "connector": "MPO-8"
+    },
+    "sideB": {
+      "connector": "MPO-8"
+    },
+    "polarity": "B"
+  },
+  {
+    "id": "cbl.os2-144f-12mpo12",
+    "name": "144F OS2 12×MPO-12 ↔ 12×MPO-12",
+    "media": "OS2",
+    "mediaClass": "fiber",
+    "endA": "MPO-12",
+    "endB": "MPO-12",
+    "color": "#facc15",
+    "bendRadiusMm": 120,
+    "diameterMm": 12,
+    "fiberCount": 144,
+    "fiberType": "OS2",
+    "sideA": {
+      "connector": "MPO-12"
+    },
+    "sideB": {
+      "connector": "MPO-12"
+    },
+    "polarity": "B"
   },
   {
     "id": "cbl.dac-25g",

@@ -1,4 +1,5 @@
 import { indexProject } from '../../query';
+import { resolveRouteEnds } from '../../routing/owner';
 import { managerFor } from '../../routing/positions';
 import type { Id, IssueTarget, Rack, Side } from '../../types';
 import { defineRule, type DrcFinding } from '../rule';
@@ -13,12 +14,14 @@ export const missingManager = defineRule({
     const idx = indexProject(project);
     const groups = new Map<string, { rack: Rack; side: Side; linkIds: Id[] }>();
     for (const route of Object.values(project.routes)) {
-      const link = idx.link(route.linkId);
-      if (!link) continue;
-      for (const [endRef, path] of [
-        [link.a, route.aRack],
-        [link.b, route.bRack],
+      const ends = resolveRouteEnds(idx, route);
+      if (!ends) continue;
+      for (const [endRef, path, furcation] of [
+        [ends.a, route.aRack, ends.furcationA],
+        [ends.b, route.bRack, ends.furcationB],
       ] as const) {
+        // A cable jacket that fans out ends at its furcation point on the floor, not down the rack's manager.
+        if (furcation) continue;
         const rack = idx.rackOfComponent(endRef.componentId);
         if (!rack || managerFor(project, rack.id, path.side)) continue;
         const key = `${rack.id}:${path.side}`;

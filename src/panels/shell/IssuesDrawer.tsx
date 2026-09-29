@@ -4,6 +4,7 @@
  */
 import { useMemo } from 'react';
 import { indexProject } from '@/model/query';
+import { resolveEndsOf, routeLabel, routeOwner } from '@/model/routing';
 import type { Id, Issue, IssueTarget, SelectionItem } from '@/model/types';
 import { isSelected, store, useIssues, useSelection } from '@/store';
 import { Badge } from '@/ui/Badge';
@@ -29,9 +30,15 @@ export function selectionForTarget(target: IssueTarget): SelectionItem {
       return { kind: 'tray', id: target.id };
     case 'sheet':
       return { kind: 'sheet', id: target.id };
-    case 'route':
-      // Routes are keyed by link id; selecting the link highlights its route.
-      return { kind: 'link', id: target.id };
+    case 'route': {
+      // Routes are keyed by their owner's id: the link, or the cable whose jacket the route is. Selecting the owner highlights the route.
+      const project = store.getState().project;
+      const route = project.routes[target.id];
+      const owner = route ? routeOwner(route) : indexProject(project).cable(target.id) ? 'cable' : 'link';
+      return { kind: owner, id: target.id };
+    }
+    case 'cable':
+      return { kind: 'cable', id: target.id };
   }
 }
 
@@ -44,9 +51,9 @@ function sheetOfIssue(issue: Issue): Id | null {
       const c = idx.component(t.id);
       if (c) return c.sch.sheetId;
     }
-    if (t.kind === 'link' || t.kind === 'route') {
-      const l = idx.link(t.id);
-      const c = l && idx.component(l.a.componentId);
+    if (t.kind === 'link' || t.kind === 'route' || t.kind === 'cable') {
+      const ends = resolveEndsOf(idx, t.id);
+      const c = ends && idx.component(ends.a.componentId);
       if (c) return c.sch.sheetId;
     }
   }
@@ -78,8 +85,9 @@ export function targetLabels(issue: Issue): string {
       }
       case 'link':
       case 'route': {
-        const l = idx.link(t.id);
-        labels.push(l ? idx.linkLabel(l) : t.id);
+        // A route target may name a cable (its jacket route).
+        const ends = resolveEndsOf(idx, t.id);
+        labels.push(ends ? routeLabel(idx, ends) : (idx.cable(t.id)?.label ?? t.id));
         break;
       }
       case 'rack':
@@ -90,6 +98,9 @@ export function targetLabels(issue: Issue): string {
         break;
       case 'sheet':
         labels.push(idx.project.sheets.find((sh) => sh.id === t.id)?.name ?? t.id);
+        break;
+      case 'cable':
+        labels.push(idx.cable(t.id)?.label ?? t.id);
         break;
     }
   }

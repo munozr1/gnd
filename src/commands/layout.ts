@@ -10,6 +10,7 @@
 import { catalogIndex } from '@/catalog';
 import { createRack, createTray, newId } from '@/model/factories';
 import { rackRect, rotate90 } from '@/model/geometry';
+import { indexProject } from '@/model/query';
 import * as routing from '@/model/routing';
 import * as sync from '@/model/sync';
 import type { AcceptResult, ApplySummary } from '@/model/sync';
@@ -37,7 +38,7 @@ import type {
 import { command, type Command } from '@/store/commands';
 import { asArray, dragKey, plural, resultCommand, snapshot, type ResultCommand } from './base';
 import { planPlaceByRule, type PlaceByRulePlan, type PlaceRule, type PlannedPlacement } from './placeByRule';
-import { nextRackName, placeDevice, redressRoutesOf, unplaceDevice, type PlacementTarget } from './placement';
+import { defaultFrameDefId, frameNameFor, nextFreeFloorPos, nextRackName, placeDevice, redressRoutesOf, unplaceDevice, type PlacementTarget } from './placement';
 
 const EDITOR = 'layout';
 
@@ -76,6 +77,38 @@ function pushRack(draft: Project, def: RackDef, pos: Vec2, opts: AddRackOptions)
 /** Place a rack from a catalog def; `result` is the rack id. */
 export function addRack(def: RackDef, pos: Vec2, opts: AddRackOptions = {}): ResultCommand<Id> {
   return resultCommand(`Add rack ${opts.name?.trim() || def.name}`, EDITOR, (d) => pushRack(d, def, pos, opts).id);
+}
+
+export interface NewFrameOptions {
+  /** Frame def; default: the smallest patch frame that fits the device. */
+  defId?: string;
+  name?: string;
+  rotationDeg?: Rotation;
+  face?: Face;
+}
+
+/**
+ * Make a device its own rack: create a free-standing patch frame at `pos`
+ * (or the next free floor spot) and place the device at U1. This is how a
+ * patch panel is placed directly on the floor plan without choosing a rack.
+ * `result` is the new frame's rack id.
+ */
+export function placeInNewFrame(componentId: Id, pos?: Vec2, opts: NewFrameOptions = {}): ResultCommand<Id> {
+  return resultCommand('Place as own frame', EDITOR, (d) => {
+    const c = d.components.find((x) => x.id === componentId);
+    if (!c) throw new Error(`Component ${componentId} does not exist`);
+    const defId = opts.defId ?? defaultFrameDefId(d, c);
+    const def = catalogIndex(d).catalog.racks.find((r) => r.id === defId);
+    if (!def) throw new Error(`Unknown rack def ${defId}`);
+    const at = pos ?? nextFreeFloorPos(d, def);
+    const rack = pushRack(d, def, at, {
+      name: opts.name ?? frameNameFor(d, c.ref),
+      ...(opts.rotationDeg !== undefined ? { rotationDeg: opts.rotationDeg } : {}),
+    });
+    placeDevice(d, { componentId, rackId: rack.id, uPosition: 1, ...(opts.face !== undefined ? { face: opts.face } : {}) });
+    redressRoutesOf(d, componentId);
+    return rack.id;
+  });
 }
 
 export interface RackArrayOptions {
@@ -520,10 +553,18 @@ export function deleteTray(ids: Id | readonly Id[]): Command {
 // Routes
 // ---------------------------------------------------------------------------
 
-function requireRoute(draft: Project, linkId: Id): Route {
-  const r = draft.routes[linkId];
-  if (!r) throw new Error(`Link ${linkId} has no route`);
+/** A route by its key: a link id, or a cable id for a cable's jacket route. */
+function requireRoute(draft: Project, routeId: Id): Route {
+  const r = draft.routes[routeId];
+  if (!r) throw new Error(`${(draft.cables ?? []).some((c) => c.id === routeId) ? 'Cable' : 'Link'} ${routeId} has no route`);
   return r;
+}
+
+/** The two ends a route (or a would-be route) dresses: the link's ends, or the cable's first plugged leg per side. */
+function requireRouteEnds(draft: Project, routeId: Id): routing.RouteEnds {
+  const ends = routing.resolveEndsOf(indexProject(snapshot(draft)), routeId);
+  if (!ends) throw new Error(`Link or cable not found (or a cable side is unplugged): ${routeId}`);
+  return ends;
 }
 
 /** Common tail of every route edit: refresh rack anchors and clear the F8 review flag. */
@@ -534,6 +575,7 @@ function touchRoute(draft: Project, route: Route, reanchor = true): void {
 
 const cloneRoute = (route: Route): Route => ({
   linkId: route.linkId,
+  ...(route.owner !== undefined ? { owner: route.owner } : {}),
   aRack: { ...route.aRack },
   bRack: { ...route.bRack },
   segments: route.segments.map((s) => ({
@@ -549,28 +591,39 @@ const cloneRoute = (route: Route): Route => ({
   })),
 });
 
-/** Replace (or create) the whole route of a link, e.g. when the route tool finishes. */
-export function setRoute(linkId: Id, route: Route): Command {
+/**
+ * Replace (or create) the whole route of a link, e.g. when the route tool
+ * finishes. `routeId` may be a cable id: the route is then the cable's
+ * jacket and is stored with `owner: 'cable'` whatever `route.owner` says.
+ */
+export function setRoute(routeId: Id, route: Route): Command {
   return command('Route cable', EDITOR, (d) => {
-    if (!d.links.some((l) => l.id === linkId)) throw new Error(`Link not found: ${linkId}`);
-    if (route.linkId !== linkId) throw new Error('Route belongs to another link');
+    const ends = requireRouteEnds(d, routeId);
+    if (route.linkId !== routeId) throw new Error('Route belongs to another link or cable');
     const next = cloneRoute(route);
-    d.routes[linkId] = next;
+    if (ends.owner === 'cable') next.owner = 'cable';
+    else delete next.owner;
+    d.routes[routeId] = next;
     touchRoute(d, next);
   });
 }
 
-/** Build a route from hand-routed floor points per layer (auto-dressing both in-rack ends) and store it. */
-export function finishRoute(linkId: Id, layerPoints: readonly routing.LayerPoints[], pinByDefault?: boolean): Command {
+/**
+ * Build a route from hand-routed floor points per layer (auto-dressing both
+ * in-rack ends) and store it. A cable id routes the cable's jacket (from
+ * side A's port to side B's furcation point); its legs are derived.
+ */
+export function finishRoute(routeId: Id, layerPoints: readonly routing.LayerPoints[], pinByDefault?: boolean): Command {
   return command('Route cable', EDITOR, (d) => {
-    const route = routing.newRouteFromPoints(snapshot(d), linkId, layerPoints, pinByDefault ?? d.settings.pinWaypointsByDefault);
-    if (!route) throw new Error(`Link not found: ${linkId}`);
-    d.routes[linkId] = route;
+    const route = routing.newRouteFromPoints(snapshot(d), routeId, layerPoints, pinByDefault ?? d.settings.pinWaypointsByDefault);
+    if (!route) throw new Error(`Link or cable not found (or a cable side is unplugged): ${routeId}`);
+    d.routes[routeId] = route;
   });
 }
 
-export function unroute(linkIds: Id | readonly Id[]): Command {
-  const list = asArray(linkIds);
+/** Delete routes by key (link ids, or cable ids for jacket routes). */
+export function unroute(routeIds: Id | readonly Id[]): Command {
+  const list = asArray(routeIds);
   return command(`Unroute ${plural(list.length, 'cable')}`, EDITOR, (d) => {
     for (const id of list) delete d.routes[id];
   });
@@ -687,12 +740,11 @@ export function setServiceLoop(linkId: Id, segIdx: number, wpId: Id, metres: num
 // In-rack dressing
 // ---------------------------------------------------------------------------
 
-/** Override the manager side and/or top entry at one end of a route (pins that end). */
-export function setInRackPath(linkId: Id, end: 'a' | 'b', path: { side?: Side; entry?: Id | null }): Command {
+/** Override the manager side and/or top entry at one end of a route (pins that end). `routeId` is a link id or a cable id. */
+export function setInRackPath(routeId: Id, end: 'a' | 'b', path: { side?: Side; entry?: Id | null }): Command {
   return command('Set in-rack path', EDITOR, (d) => {
-    const route = requireRoute(d, linkId);
-    const link = d.links.find((l) => l.id === linkId);
-    if (!link) throw new Error(`Link not found: ${linkId}`);
+    const route = requireRoute(d, routeId);
+    const endRef = requireRouteEnds(d, routeId)[end];
     const key = end === 'a' ? 'aRack' : 'bRack';
     const next: InRackPath = { ...route[key], pinned: true };
     if (path.side !== undefined) next.side = path.side;
@@ -700,7 +752,7 @@ export function setInRackPath(linkId: Id, end: 'a' | 'b', path: { side?: Side; e
       if (path.entry !== null) {
         const acc = d.accessories.find((a) => a.id === path.entry);
         if (!acc || acc.type !== 'top-entry') throw new Error('Entry must be a top-entry accessory');
-        const placement = d.placements.find((p) => p.componentId === link[end].componentId);
+        const placement = d.placements.find((p) => p.componentId === endRef.componentId);
         if (placement?.rackId && placement.rackId !== acc.rackId) throw new Error('Top entry is on another rack');
       }
       next.entry = path.entry;
@@ -710,14 +762,13 @@ export function setInRackPath(linkId: Id, end: 'a' | 'b', path: { side?: Side; e
   });
 }
 
-/** Return one end of a route to automatic dressing. */
-export function resetInRackPath(linkId: Id, end: 'a' | 'b'): Command {
+/** Return one end of a route to automatic dressing. `routeId` is a link id or a cable id. */
+export function resetInRackPath(routeId: Id, end: 'a' | 'b'): Command {
   return command('Auto in-rack path', EDITOR, (d) => {
-    const route = requireRoute(d, linkId);
-    const link = d.links.find((l) => l.id === linkId);
-    if (!link) throw new Error(`Link not found: ${linkId}`);
+    const route = requireRoute(d, routeId);
+    const endRef = requireRouteEnds(d, routeId)[end];
     const key = end === 'a' ? 'aRack' : 'bRack';
-    route[key] = routing.autoInRackPath(snapshot(d), link[end].componentId, link[end].portId);
+    route[key] = routing.autoInRackPath(snapshot(d), endRef.componentId, endRef.portId);
     touchRoute(d, route, false);
   });
 }

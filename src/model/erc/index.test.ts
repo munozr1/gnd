@@ -5,7 +5,7 @@ import { LEAF, SERVER_1U, addComponent, buildSpineLeafMesh, connect, end, errors
 import { compareIssues, ercRuleById, ercRules, ercSeverity, runErc } from './index';
 
 describe('ercRules', () => {
-  it('has the nine spec rules with unique kebab-case ids', () => {
+  it('has the nine spec rules then the four cable rules, with unique kebab-case ids', () => {
     expect(ercRules.map((r) => r.id)).toEqual([
       'port-reuse',
       'form-factor-mismatch',
@@ -16,6 +16,10 @@ describe('ercRules', () => {
       'unassigned-model',
       'single-homed-server',
       'unconnected-uplinks',
+      'cable-def-invalid',
+      'cable-connector-mismatch',
+      'cable-leg-unassigned',
+      'cable-unused-fibers',
     ]);
     for (const r of ercRules) {
       expect(r.id).toMatch(/^[a-z]+(-[a-z]+)*$/);
@@ -36,6 +40,10 @@ describe('ercRules', () => {
       'unassigned-model': 'warning',
       'single-homed-server': 'warning',
       'unconnected-uplinks': 'info',
+      'cable-def-invalid': 'error',
+      'cable-connector-mismatch': 'error',
+      'cable-leg-unassigned': 'warning',
+      'cable-unused-fibers': 'info',
     });
   });
 });

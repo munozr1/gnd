@@ -4,6 +4,7 @@
  */
 import { indexProject, type ProjectIndex } from '../query';
 import type { Id, Link, Project, Side } from '../types';
+import { resolveRouteEnds } from './owner';
 import { managerCrossSection, managerFor } from './positions';
 
 export const DEFAULT_CABLE_DIAMETER_MM = 3;
@@ -21,9 +22,16 @@ export function cableDiameterMm(idx: ProjectIndex, link: Link | undefined): numb
   return (link && idx.cableOf(link)?.diameterMm) || DEFAULT_CABLE_DIAMETER_MM;
 }
 
+/** Outer diameter of the cable a route carries: the link's cable, or the jacket of a cable route. */
+export function routeDiameterMm(idx: ProjectIndex, routeId: Id): number {
+  const route = idx.route(routeId);
+  const ends = route && resolveRouteEnds(idx, route);
+  return ends?.cableDef?.diameterMm || DEFAULT_CABLE_DIAMETER_MM;
+}
+
 const cableAreaMm2 = (d: number): number => Math.PI * (d / 2) ** 2;
 
-/** Ids of links whose route has a segment riding the tray, in route order. */
+/** Route keys (link or cable ids) whose route has a segment riding the tray, in route order. */
 export function cablesInTray(project: Project, trayId: Id): Id[] {
   const out: Id[] = [];
   for (const route of Object.values(project.routes)) {
@@ -34,7 +42,7 @@ export function cablesInTray(project: Project, trayId: Id): Id[] {
 
 function fillOf(idx: ProjectIndex, linkIds: readonly Id[], areaMm2: number): FillStats {
   let usedMm2 = 0;
-  for (const id of linkIds) usedMm2 += cableAreaMm2(cableDiameterMm(idx, idx.link(id)));
+  for (const id of linkIds) usedMm2 += cableAreaMm2(routeDiameterMm(idx, id));
   return { areaMm2, usedMm2, fraction: areaMm2 > 0 ? usedMm2 / areaMm2 : 0, cableCount: linkIds.length };
 }
 
@@ -45,15 +53,15 @@ export function trayFill(project: Project, trayId: Id): FillStats | null {
   return fillOf(indexProject(project), cablesInTray(project, trayId), tray.widthMm * tray.depthMm);
 }
 
-/** Ids of links whose route uses the manager on a side of a rack. */
+/** Route keys (link or cable ids) whose route uses the manager on a side of a rack. */
 export function routesUsingManager(project: Project, rackId: Id, side: Side): Id[] {
   const idx = indexProject(project);
   const out: Id[] = [];
   for (const route of Object.values(project.routes)) {
-    const link = idx.link(route.linkId);
-    if (!link) continue;
-    const a = route.aRack.side === side && idx.rackOfComponent(link.a.componentId)?.id === rackId;
-    const b = route.bRack.side === side && idx.rackOfComponent(link.b.componentId)?.id === rackId;
+    const ends = resolveRouteEnds(idx, route);
+    if (!ends) continue;
+    const a = route.aRack.side === side && idx.rackOfComponent(ends.a.componentId)?.id === rackId;
+    const b = route.bRack.side === side && idx.rackOfComponent(ends.b.componentId)?.id === rackId;
     if (a || b) out.push(route.linkId);
   }
   return out;
@@ -85,7 +93,7 @@ export function trayCableSlots(project: Project, trayId: Id): Map<Id, CableSlot>
   const ids = cablesInTray(project, trayId);
   const rows: { ids: Id[]; widths: number[]; width: number; height: number }[] = [];
   for (const id of ids) {
-    const d = cableDiameterMm(idx, idx.link(id));
+    const d = routeDiameterMm(idx, id);
     let row = rows[rows.length - 1];
     if (!row || (row.ids.length > 0 && row.width + CABLE_GAP_MM + d > tray.widthMm)) {
       row = { ids: [], widths: [], width: 0, height: 0 };
